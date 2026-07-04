@@ -27,7 +27,14 @@ target_metadata = Base.metadata
 
 # Set sqlalchemy.url from our settings
 from app.core.config import settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("postgresql+asyncpg", "postgresql").replace("%", "%%"))
+
+sync_url = (
+    settings.DATABASE_URL
+    .replace("postgresql+asyncpg", "postgresql")
+    .replace("ssl=require", "sslmode=require")
+    .replace("%", "%%")
+)
+config.set_main_option("sqlalchemy.url", sync_url)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
