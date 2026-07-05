@@ -27,3 +27,28 @@ app.include_router(projects.router)
 @app.get("/")
 async def root():
     return {"message": "CodeForge AI Backend"}
+
+
+@app.get("/groq-health")
+async def groq_health():
+    import traceback
+    from fastapi.responses import JSONResponse
+    try:
+        from agents.base_agent import BaseAgent
+        # Run a minimal request to test the connection to Groq
+        agent = BaseAgent(model="llama-3.1-8b-instant")
+        res = agent.run("ping")
+        if res:
+            return {"status": "success"}
+        else:
+            return {"status": "failed", "exception": "Empty response received from Groq API"}
+    except Exception as e:
+        tb = traceback.format_exc()
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "failed",
+                "exception": f"{type(e).__name__}: {str(e)}",
+                "traceback": tb
+            }
+        )
