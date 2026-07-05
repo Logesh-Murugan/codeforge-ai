@@ -6,7 +6,10 @@ Given a Solution Architect JSON response, return a JSON object with the followin
 }
 
 ## Important Rules:
-- Return ONLY the JSON object, no markdown fences, no preamble, no extra text.
+- Return ONLY a single valid, parseable JSON object.
+- Do NOT use markdown code blocks (do not wrap your response in ```json or ```).
+- Do NOT include any explanations, preambles, notes, introduction, or comments.
+- All code files must have their newlines escaped as `\n` in the JSON string. Do NOT output raw literal newlines or control characters inside the JSON strings.
 - Generate complete, working FastAPI code.
 - Use SQLAlchemy for models.
 - Use Pydantic for schemas.

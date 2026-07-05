@@ -31,16 +31,19 @@ class BaseAgent:
         system_prompt: Optional[str] = None,
         max_retries: int = 3,
         initial_retry_delay: float = 1.0,
+        temperature: float = 0.0,
     ):
         self.model = model
         self.system_prompt = system_prompt
         self.max_retries = max_retries
         self.initial_retry_delay = initial_retry_delay
+        self.temperature = temperature
 
         logger.info("=" * 80)
         logger.info(f"Initializing Groq Client for model: {self.model}")
         logger.info(f"GROQ_BASE_URL: {settings.GROQ_BASE_URL}")
         logger.info(f"GROQ_API_KEY starts with: {settings.GROQ_API_KEY[:10]}...")
+        logger.info(f"Temperature: {self.temperature}")
         logger.info("=" * 80)
 
         # Force IPv4 socket binding to prevent Render network proxy/dual-stack IPv6 DNS resolution timeouts
@@ -85,6 +88,7 @@ class BaseAgent:
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
+                    temperature=self.temperature,
                     **kwargs,
                 )
 

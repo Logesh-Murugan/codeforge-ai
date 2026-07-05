@@ -47,37 +47,83 @@ class BackendDeveloperAgent:
 
         # First attempt
         try:
+            logger.info("Running Backend Developer Agent - Attempt 1")
             response_str = self.base_agent.run(input_str)
+            
+            logger.info("=" * 80)
+            logger.info("RAW BACKEND DEVELOPER RESPONSE (ATTEMPT 1)")
+            logger.info(response_str)
+            logger.info("=" * 80)
+            
             return self._parse_response(response_str)
-        except (json.JSONDecodeError, ValidationError) as e:
-            logger.warning(f"First attempt failed: {str(e)}. Retrying with correction...")
+        except Exception as e:
+            logger.warning(f"First attempt failed: {type(e).__name__}: {str(e)}. Retrying with correction...")
+            if 'response_str' in locals():
+                logger.debug(f"Failed response: {response_str}")
 
         # Second attempt with correction
         try:
+            logger.info("Running Backend Developer Agent - Attempt 2 (Correction)")
             correction_prompt = (
-                f"The previous response was not valid JSON. Please fix it and return ONLY valid JSON:\n"
-                f"{response_str}"
+                f"You generated an invalid JSON response earlier. Please fix it and return ONLY valid, parseable JSON. "
+                f"Do not include any markdown wrap, text explanations, or unescaped control characters like tabs/raw newlines. "
+                f"Previous output:\n{response_str}"
             )
             response_str = self.base_agent.run(correction_prompt)
+            
+            logger.info("=" * 80)
+            logger.info("RAW BACKEND DEVELOPER RESPONSE (ATTEMPT 2)")
+            logger.info(response_str)
+            logger.info("=" * 80)
+            
             return self._parse_response(response_str)
-        except (json.JSONDecodeError, ValidationError) as e:
-            logger.error(f"Second attempt failed: {str(e)}")
+        except Exception as e:
+            logger.error("=" * 80)
+            logger.error("BACKEND DEVELOPER AGENT CRITICAL FAILURE")
+            logger.error(f"Error Type: {type(e).__name__}")
+            logger.error(f"Error Message: {str(e)}")
+            if 'response_str' in locals():
+                logger.error("FAILED RESPONSE ON ATTEMPT 2:")
+                logger.error(response_str)
+            logger.error("=" * 80)
             raise AgentExecutionError(f"Failed to get valid JSON after two attempts: {str(e)}") from e
 
     def _parse_response(self, response_str: str) -> BackendDeveloperResponse:
-        """Parse and validate the agent's response."""
-        # Clean up the response string (remove any markdown fences)
+        """Parse and validate the agent's response with robust fallback."""
         cleaned = response_str.strip()
-        if cleaned.startswith("```json"):
-            cleaned = cleaned[7:]
-        if cleaned.startswith("```"):
-            cleaned = cleaned[3:]
-        if cleaned.endswith("```"):
-            cleaned = cleaned[:-3]
+        
+        # 1. Clean markdown code fences if present
+        if "```" in cleaned:
+            parts = cleaned.split("```")
+            for part in parts:
+                part_clean = part.strip()
+                if part_clean.startswith("json"):
+                    part_clean = part_clean[4:].strip()
+                if part_clean.startswith("{") and part_clean.endswith("}"):
+                    cleaned = part_clean
+                    break
+        
+        # 2. Extract bounding brackets if there is leading/trailing text outside the JSON
+        if not (cleaned.startswith("{") and cleaned.endswith("}")):
+            start_idx = cleaned.find("{")
+            end_idx = cleaned.rfind("}")
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                cleaned = cleaned[start_idx:end_idx + 1]
+
         cleaned = cleaned.strip()
 
-        # Parse JSON
-        data = json.loads(cleaned)
+        # 3. Parse JSON tolerating control characters (strict=False)
+        try:
+            data = json.loads(cleaned, strict=False)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSONDecodeError occurred during json.loads: {str(e)}")
+            logger.error(f"Target string for parsing:\n{cleaned}")
+            raise
 
-        # Validate with Pydantic
-        return BackendDeveloperResponse(**data)
+        # 4. Validate with Pydantic
+        try:
+            return BackendDeveloperResponse(**data)
+        except ValidationError as e:
+            logger.error(f"Pydantic validation error: {str(e)}")
+            logger.error(f"Parsed dictionary content:\n{json.dumps(data, indent=2) if isinstance(data, dict) else data}")
+            raise
