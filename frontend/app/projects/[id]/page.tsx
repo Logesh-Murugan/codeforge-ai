@@ -16,6 +16,7 @@ interface AgentRun {
 }
 
 const AGENT_ORDER = [
+  "project_manager",
   "business_analyst",
   "solution_architect",
   "backend_developer",
@@ -24,10 +25,15 @@ const AGENT_ORDER = [
 ];
 
 const AGENT_META: Record<string, { label: string; icon: string; desc: string }> = {
+  project_manager: {
+    label: "Project Manager",
+    icon: "📋",
+    desc: "Creates a master plan, defines milestones, goals, and execution dependencies.",
+  },
   business_analyst: {
     label: "Business Analyst",
     icon: "📊",
-    desc: "Extracts data entities, core actions, and auth requirements from the idea.",
+    desc: "Extracts data entities, core actions, and auth requirements from the plan.",
   },
   solution_architect: {
     label: "Solution Architect",
@@ -58,12 +64,12 @@ export default function ProjectStatusPage() {
   
   const [runs, setRuns] = useState<AgentRun[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedAgent, setSelectedAgent] = useState<string>("business_analyst");
+  const [selectedAgent, setSelectedAgent] = useState<string>("project_manager");
   const [activeCodeFile, setActiveCodeFile] = useState<string>("");
   const [activeFixedFile, setActiveFixedFile] = useState<string>("");
   const [logs, setLogs] = useState<string[]>([]);
 
-  const isAllDone = runs.length === 5 && runs.every((r) => r.status === "completed");
+  const isAllDone = runs.length === 6 && runs.every((r) => r.status === "completed");
   const anyFailed = runs.some((r) => r.status === "failed");
 
   // Determine current active agent based on run status
@@ -211,6 +217,134 @@ export default function ProjectStatusPage() {
     if (!data) return null;
 
     switch (selectedAgent) {
+      case "project_manager":
+        return (
+          <div className="space-y-6">
+            <div className="bg-white/5 border border-white/5 rounded-2xl p-5">
+              <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block mb-1">Project Summary</span>
+              <p className="text-sm text-white leading-relaxed">{data.project_summary}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Scope Boundaries</span>
+                <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{data.project_scope}</p>
+              </div>
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Estimated Complexity</span>
+                <div className="flex items-center space-x-2">
+                  <span className={`px-3 py-1 rounded-xl text-xs font-bold uppercase border ${
+                    data.estimated_complexity === "low" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                    data.estimated_complexity === "medium" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+                    data.estimated_complexity === "high" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                    "bg-red-500/10 text-red-400 border-red-500/20"
+                  }`}>
+                    {data.estimated_complexity}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {data.goals?.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Project Goals</h4>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {data.goals.map((goal: string, i: number) => (
+                    <li key={i} className="flex items-start space-x-2 text-xs text-gray-300">
+                      <span className="text-indigo-400 mt-0.5">•</span>
+                      <span>{goal}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {data.milestones?.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Milestones & Phases</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {data.milestones.map((ms: any, i: number) => (
+                    <div key={i} className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-2">
+                      <h5 className="font-bold text-white text-xs flex items-center space-x-2">
+                        <span className="bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded text-[10px]">{i + 1}</span>
+                        <span>{ms.name}</span>
+                      </h5>
+                      <p className="text-[11px] text-gray-400 leading-relaxed">{ms.description}</p>
+                      {ms.deliverables?.length > 0 && (
+                        <div className="pt-2">
+                          <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Deliverables</span>
+                          <div className="flex flex-wrap gap-1">
+                            {ms.deliverables.map((del: string, j: number) => (
+                              <span key={j} className="bg-black/20 text-gray-300 px-1.5 py-0.5 rounded text-[9px] border border-white/5">
+                                {del}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {data.agent_execution_plan?.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Agent Execution Steps</h4>
+                <div className="overflow-x-auto border border-white/5 rounded-2xl">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-white/5 border-b border-white/5 text-gray-400">
+                        <th className="px-4 py-3">Agent</th>
+                        <th className="px-4 py-3">Input Dependency</th>
+                        <th className="px-4 py-3">Execution Role</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {data.agent_execution_plan.map((step: any, i: number) => (
+                        <tr key={i} className="hover:bg-white/5 transition-colors text-[11px]">
+                          <td className="px-4 py-2.5 font-bold text-indigo-300">{step.agent}</td>
+                          <td className="px-4 py-2.5 font-mono text-gray-400">{step.input_from || "User Prompt / Raw Idea"}</td>
+                          <td className="px-4 py-2.5 text-gray-300">{step.description}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {data.risks?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Identified Risks</h4>
+                  <ul className="space-y-1.5">
+                    {data.risks.map((risk: string, i: number) => (
+                      <li key={i} className="flex items-start space-x-2 text-[11px] text-gray-300 bg-red-950/10 border border-red-500/10 rounded-xl p-2.5">
+                        <span className="text-red-400">⚠️</span>
+                        <span>{risk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {data.assumptions?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Assumptions</h4>
+                  <ul className="space-y-1.5">
+                    {data.assumptions.map((asm: string, i: number) => (
+                      <li key={i} className="flex items-start space-x-2 text-[11px] text-gray-300 bg-white/5 border border-white/5 rounded-xl p-2.5">
+                        <span className="text-indigo-400">✓</span>
+                        <span>{asm}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
       case "business_analyst":
         return (
           <div className="space-y-6">
