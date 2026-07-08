@@ -3,6 +3,31 @@ from typing import List, Optional
 from datetime import datetime
 
 
+class Milestone(BaseModel):
+    name: str
+    description: str
+    deliverables: List[str]
+
+
+class AgentExecutionStep(BaseModel):
+    agent: str
+    input_from: Optional[str]
+    description: str
+
+
+class ProjectManagerResponse(BaseModel):
+    project_summary: str
+    project_scope: str
+    goals: List[str]
+    milestones: List[Milestone]
+    priority_features: List[str]
+    estimated_complexity: str
+    agent_execution_plan: List[AgentExecutionStep]
+    parallel_execution_groups: List[List[str]]
+    risks: List[str]
+    assumptions: List[str]
+
+
 class Entity(BaseModel):
     name: str
     fields: List[str]
@@ -86,3 +111,4 @@ class AgentRunResponse(BaseModel):
 
 class GenerateProjectRequest(BaseModel):
     idea: str
+

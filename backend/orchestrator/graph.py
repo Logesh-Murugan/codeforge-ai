@@ -6,6 +6,7 @@ from langgraph.graph import StateGraph, END
 from app.db import AsyncSessionLocal
 from app.models import Project, AgentRun
 from agents.base_agent import AgentExecutionError
+from agents.project_manager import ProjectManagerAgent
 from agents.business_analyst import BusinessAnalystAgent
 from agents.solution_architect import SolutionArchitectAgent
 from agents.backend_developer import BackendDeveloperAgent
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 class AgentState(TypedDict):
     project_id: int
     project_idea: str
+    project_plan: dict | None
     business_requirements: dict | None
     solution_arch: dict | None
     backend_code: dict | None
@@ -93,17 +95,68 @@ async def get_project_files(project_id: int) -> list:
         return project.generated_files if (project and project.generated_files) else []
 
 
+async def project_manager_node(state: AgentState) -> AgentState:
+    """Run the Project Manager agent — first node in the pipeline."""
+    project_id = state["project_id"]
+    project_idea = state["project_idea"]
+    
+    # Create agent run
+    agent_run = await create_agent_run(project_id, "project_manager", "running")
+    
+    try:
+        agent = ProjectManagerAgent()
+        result = agent.run(project_idea)
+        
+        # Update agent run
+        await update_agent_run(
+            agent_run.id,
+            "completed",
+            output_json=result.model_dump()
+        )
+        
+        return {
+            **state,
+            "project_plan": result.model_dump(),
+            "current_agent": "business_analyst",
+            "error": None
+        }
+    except Exception as e:
+        logger.error(f"Project Manager agent failed: {e}", exc_info=True)
+        await update_agent_run(
+            agent_run.id,
+            "failed",
+            error_message=str(e)
+        )
+        return {
+            **state,
+            "error": str(e)
+        }
+
+
 async def business_analyst_node(state: AgentState) -> AgentState:
     """Run the Business Analyst agent."""
     project_id = state["project_id"]
     project_idea = state["project_idea"]
+    project_plan = state.get("project_plan")
     
     # Create agent run
     agent_run = await create_agent_run(project_id, "business_analyst", "running")
     
     try:
         agent = BusinessAnalystAgent()
-        result = agent.run(project_idea)
+        
+        # Enrich the BA input with the Project Manager's plan
+        if project_plan:
+            import json
+            enriched_input = (
+                f"{project_idea}\n\n"
+                f"--- Project Manager Plan ---\n"
+                f"{json.dumps(project_plan, indent=2)}"
+            )
+        else:
+            enriched_input = project_idea
+        
+        result = agent.run(enriched_input)
         
         # Update agent run
         await update_agent_run(
@@ -316,6 +369,8 @@ def should_continue(state: AgentState) -> str:
     """Determine the next node or end."""
     if state.get("error"):
         return END
+    if state.get("current_agent") == "business_analyst":
+        return "business_analyst"
     if state.get("current_agent") == "solution_architect":
         return "solution_architect"
     if state.get("current_agent") == "backend_developer":
@@ -330,13 +385,15 @@ def should_continue(state: AgentState) -> str:
 # Build the graph
 graph = StateGraph(AgentState)
 
+graph.add_node("project_manager", project_manager_node)
 graph.add_node("business_analyst", business_analyst_node)
 graph.add_node("solution_architect", solution_architect_node)
 graph.add_node("backend_developer", backend_developer_node)
 graph.add_node("code_reviewer", code_reviewer_node)
 graph.add_node("doc_writer", doc_writer_node)
 
-graph.set_entry_point("business_analyst")
+graph.set_entry_point("project_manager")
+graph.add_conditional_edges("project_manager", should_continue)
 graph.add_conditional_edges("business_analyst", should_continue)
 graph.add_conditional_edges("solution_architect", should_continue)
 graph.add_conditional_edges("backend_developer", should_continue)
@@ -352,6 +409,7 @@ async def run_pipeline(project_id: int, project_idea: str):
     initial_state: AgentState = {
         "project_id": project_id,
         "project_idea": project_idea,
+        "project_plan": None,
         "business_requirements": None,
         "solution_arch": None,
         "backend_code": None,
@@ -362,3 +420,4 @@ async def run_pipeline(project_id: int, project_idea: str):
     
     async for state in app.astream(initial_state):
         pass
+
