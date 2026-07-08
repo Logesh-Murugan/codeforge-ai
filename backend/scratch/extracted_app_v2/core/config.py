@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from datetime import timedelta
 
 class Settings(BaseSettings):
     PROJECT_TITLE: str
@@ -8,7 +8,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    PASSWORD_CONTEXT: object
+
     class Config:
         env_file = '.env'
         env_file_encoding = 'utf-8'

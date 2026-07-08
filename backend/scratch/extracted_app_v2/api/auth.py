@@ -1,63 +1,35 @@
 from fastapi import APIRouter, Depends, HTTPException
-from core.security import get_password_hash, verify_password
-from core.config import settings
-from db import get_db
-from models import User
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pydantic import ValidationError
+from core.security import authenticate_user, create_access_token
 from schemas import UserCreate
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from pydantic import BaseModel
-from datetime import datetime, timedelta
-from jose import jwt
-from typing import Optional
+from models import User
+from db import get_db
+from core.config import settings
 
-router = APIRouter(
+auth_router = APIRouter(
     prefix='/auth',
     tags=['auth'],
 )
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
-    username: Optional[str] = None
-
-async def get_user(db: AsyncSession, username: str):
-    result = await db.execute(select(User).where(User.username == username))
-    return result.scalars().first()
-
-@router.post('/register', response_model=User)
-async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
-    user_db = await get_user(db, user.username)
-    if user_db:
-        raise HTTPException(status_code=400, detail='Email or username already registered')
-    hashed_password = get_password_hash(user.password)
-    db_user = User(email=user.email, username=user.username, password_hash=hashed_password, created_at=datetime.utcnow())
-    db.add(db_user)
+@auth_router.post('/register')
+async def register(user: UserCreate):
+    db = next(get_db())
+    user_obj = User(email=user.email, username=user.username, password_hash=await settings.PASSWORD_CONTEXT.hash(user.password))
+    db.add(user_obj)
     await db.commit()
-    await db.refresh(db_user)
-    return db_user
+    return {'message': 'User created successfully'}
 
-@router.post('/login', response_model=Token)
-async def login(form_data: dict, db: AsyncSession = Depends(get_db)):
-    user_db = await get_user(db, form_data['username'])
-    if not user_db:
-        raise HTTPException(status_code=401, detail='Incorrect username or password')
-    if not verify_password(form_data['password'], user_db.password_hash):
-        raise HTTPException(status_code=401, detail='Incorrect username or password')
-    access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+@auth_router.post('/login')
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = await authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail='Incorrect username or password',
+        )
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={'sub': user_db.username}, expires_delta=access_token_expires
+        data={'sub': user.username}, expires_delta=access_token_expires
     )
     return {'access_token': access_token, 'token_type': 'bearer'}
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({'exp': expire})
-    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
-    return encoded_jwt

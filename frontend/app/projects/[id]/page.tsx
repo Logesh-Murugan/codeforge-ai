@@ -21,6 +21,7 @@ const AGENT_ORDER = [
   "product_owner",
   "solution_architect",
   "backend_developer",
+  "frontend_developer",
   "code_reviewer",
   "doc_writer",
 ];
@@ -51,6 +52,11 @@ const AGENT_META: Record<string, { label: string; icon: string; desc: string }> 
     icon: "💻",
     desc: "Generates SQLAlchemy models, schemas, and routes in clean FastAPI code.",
   },
+  frontend_developer: {
+    label: "Frontend Developer",
+    icon: "🖥️",
+    desc: "Generates Next.js dashboard pages, forms, and API client integration layer using React Query.",
+  },
   code_reviewer: {
     label: "Code Reviewer",
     icon: "🛡️",
@@ -75,7 +81,7 @@ export default function ProjectStatusPage() {
   const [activeFixedFile, setActiveFixedFile] = useState<string>("");
   const [logs, setLogs] = useState<string[]>([]);
 
-  const isAllDone = runs.length === 7 && runs.every((r) => r.status === "completed");
+  const isAllDone = runs.length === 8 && runs.every((r) => r.status === "completed");
   const anyFailed = runs.some((r) => r.status === "failed");
 
   // Determine current active agent based on run status
@@ -660,6 +666,44 @@ export default function ProjectStatusPage() {
           </div>
         );
 
+      case "frontend_developer":
+        const currentFeFileObj = data.files?.find((f: any) => f.path === activeCodeFile);
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[500px]">
+            {/* File Switcher Sidebar */}
+            <div className="lg:col-span-1 border border-white/5 rounded-2xl bg-black/20 overflow-y-auto divide-y divide-white/5">
+              <div className="px-3 py-2 bg-white/5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">
+                React Components
+              </div>
+              {data.files?.map((file: any, i: number) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveCodeFile(file.path)}
+                  className={`w-full text-left px-4 py-2.5 text-xs transition-colors flex items-center space-x-2 ${
+                    activeCodeFile === file.path
+                      ? "bg-indigo-500/10 text-indigo-400 font-semibold"
+                      : "text-gray-400 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <span>📄</span>
+                  <span className="truncate">{file.path.replace("frontend/", "")}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Code Content Screen */}
+            <div className="lg:col-span-3 border border-white/5 rounded-2xl overflow-hidden flex flex-col h-full bg-[#0a0d1e]">
+              <div className="px-4 py-2 bg-black/40 border-b border-white/5 text-xs text-gray-400 flex justify-between items-center font-mono">
+                <span>{activeCodeFile || "select file"}</span>
+                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">next.js / react</span>
+              </div>
+              <div className="flex-1 overflow-auto p-4 font-mono text-[12px] leading-relaxed text-gray-300 whitespace-pre scroll-smooth">
+                {currentFeFileObj?.content || "# Empty file"}
+              </div>
+            </div>
+          </div>
+        );
+
       case "code_reviewer":
         const autoFixedFileObj = data.auto_fixed_files?.find((f: any) => f.path === activeFixedFile);
         return (
@@ -801,6 +845,17 @@ export default function ProjectStatusPage() {
                     onClick={() => {
                       if (run) {
                         setSelectedAgent(agentName);
+                        if (agentName === "backend_developer") {
+                          if (run.output_json?.files?.length > 0) {
+                            const beFile = run.output_json.files.find((f: any) => !f.path.startsWith("frontend/")) || run.output_json.files[0];
+                            setActiveCodeFile(beFile.path);
+                          }
+                        } else if (agentName === "frontend_developer") {
+                          if (run.output_json?.files?.length > 0) {
+                            const feFile = run.output_json.files.find((f: any) => f.path.endsWith("package.json")) || run.output_json.files[0];
+                            setActiveCodeFile(feFile.path);
+                          }
+                        }
                       }
                     }}
                     className={`relative cursor-pointer group ${

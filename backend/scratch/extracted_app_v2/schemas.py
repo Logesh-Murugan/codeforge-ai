@@ -16,12 +16,10 @@ class User(BaseModel):
         orm_mode = True
 
 class NoteCreate(BaseModel):
-    title: str
     content: str
 
 class Note(BaseModel):
     id: int
-    title: str
     content: str
     author_id: int
     created_at: datetime

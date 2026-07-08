@@ -11,6 +11,7 @@ from agents.business_analyst import BusinessAnalystAgent
 from agents.product_owner import ProductOwnerAgent
 from agents.solution_architect import SolutionArchitectAgent
 from agents.backend_developer import BackendDeveloperAgent
+from agents.frontend_developer import FrontendDeveloperAgent
 from agents.code_reviewer import CodeReviewerAgent
 from agents.doc_writer import DocWriterAgent
 
@@ -26,6 +27,7 @@ class AgentState(TypedDict):
     product_owner_plan: dict | None
     solution_arch: dict | None
     backend_code: dict | None
+    frontend_code: dict | None
     code_review: dict | None
     current_agent: str | None
     error: str | None
@@ -309,11 +311,67 @@ async def backend_developer_node(state: AgentState) -> AgentState:
         return {
             **state,
             "backend_code": result.model_dump(),
-            "current_agent": "code_reviewer",
+            "current_agent": "frontend_developer",
             "error": None
         }
     except Exception as e:
         logger.error(f"Backend Developer agent failed: {e}", exc_info=True)
+        await update_agent_run(
+            agent_run.id,
+            "failed",
+            error_message=str(e)
+        )
+        return {
+            **state,
+            "error": str(e)
+        }
+
+
+async def frontend_developer_node(state: AgentState) -> AgentState:
+    """Run the Frontend Developer agent."""
+    project_id = state["project_id"]
+    solution_arch = state["solution_arch"]
+    backend_code = state["backend_code"]
+    
+    # Create agent run
+    agent_run = await create_agent_run(project_id, "frontend_developer", "running")
+    
+    try:
+        if not solution_arch:
+            raise ValueError("solution_arch is required")
+        if not backend_code:
+            raise ValueError("backend_code is required")
+            
+        agent = FrontendDeveloperAgent()
+        from app.schemas import SolutionArchitectResponse, BackendDeveloperResponse
+        result = agent.run(
+            SolutionArchitectResponse(**solution_arch),
+            BackendDeveloperResponse(**backend_code)
+        )
+        
+        # Update agent run
+        await update_agent_run(
+            agent_run.id,
+            "completed",
+            output_json=result.model_dump()
+        )
+        
+        # Save both backend and frontend files to database (append frontend files to backend ones)
+        existing_files = await get_project_files(project_id)
+        files_dict = {f["path"]: f["content"] for f in existing_files}
+        for file in result.files:
+            files_dict[file.path] = file.content
+        updated_files = [{"path": path, "content": content} for path, content in files_dict.items()]
+        await update_project_files(project_id, updated_files)
+        
+        return {
+            **state,
+            "frontend_code": result.model_dump(),
+            "current_agent": "code_reviewer",
+            "error": None
+        }
+    except Exception as e:
+        logger.error(f"Frontend Developer agent failed: {e}", exc_info=True)
         await update_agent_run(
             agent_run.id,
             "failed",
@@ -432,6 +490,8 @@ def should_continue(state: AgentState) -> str:
         return "solution_architect"
     if state.get("current_agent") == "backend_developer":
         return "backend_developer"
+    if state.get("current_agent") == "frontend_developer":
+        return "frontend_developer"
     if state.get("current_agent") == "code_reviewer":
         return "code_reviewer"
     if state.get("current_agent") == "doc_writer":
@@ -447,6 +507,7 @@ graph.add_node("business_analyst", business_analyst_node)
 graph.add_node("product_owner", product_owner_node)
 graph.add_node("solution_architect", solution_architect_node)
 graph.add_node("backend_developer", backend_developer_node)
+graph.add_node("frontend_developer", frontend_developer_node)
 graph.add_node("code_reviewer", code_reviewer_node)
 graph.add_node("doc_writer", doc_writer_node)
 
@@ -456,6 +517,7 @@ graph.add_conditional_edges("business_analyst", should_continue)
 graph.add_conditional_edges("product_owner", should_continue)
 graph.add_conditional_edges("solution_architect", should_continue)
 graph.add_conditional_edges("backend_developer", should_continue)
+graph.add_conditional_edges("frontend_developer", should_continue)
 graph.add_conditional_edges("code_reviewer", should_continue)
 graph.add_conditional_edges("doc_writer", should_continue)
 
@@ -473,6 +535,7 @@ async def run_pipeline(project_id: int, project_idea: str):
         "product_owner_plan": None,
         "solution_arch": None,
         "backend_code": None,
+        "frontend_code": None,
         "code_review": None,
         "current_agent": None,
         "error": None

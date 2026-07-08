@@ -103,6 +103,10 @@ class BackendDeveloperResponse(BaseModel):
     files: List[GeneratedFile]
 
 
+class FrontendDeveloperResponse(BaseModel):
+    files: List[GeneratedFile]
+
+
 class CodeReviewIssue(BaseModel):
     file: str
     line: Optional[int]

@@ -26,5 +26,5 @@ A personal notes app where users can sign up, create private notes, and only the
 | POST | /notes | Create a new note | Yes |
 | GET | /notes/{id} | Get a note by ID | Yes |
 | GET | /notes | List all notes for the current user | Yes |
-| PUT | /notes/{id} | Update a note (must be owned by user) | Yes |
-| DELETE | /notes/{id} | Delete a note (must be owned by user) | Yes |
+| PUT | /notes/{id} | Update a note | Yes |
+| DELETE | /notes/{id} | Delete a note | Yes |
