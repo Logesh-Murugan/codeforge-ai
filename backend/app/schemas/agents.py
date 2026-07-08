@@ -28,6 +28,26 @@ class ProjectManagerResponse(BaseModel):
     assumptions: List[str]
 
 
+class BacklogItem(BaseModel):
+    feature_name: str
+    category: str
+    description: str
+    business_value: str
+    risk_level: str
+    priority_score: int
+    acceptance_criteria: List[str]
+    dependencies: List[str]
+
+
+class ProductOwnerResponse(BaseModel):
+    sprint_goals: List[str]
+    must_have_features: List[str]
+    should_have_features: List[str]
+    could_have_features: List[str]
+    wont_have_features: List[str]
+    backlog: List[BacklogItem]
+
+
 class Entity(BaseModel):
     name: str
     fields: List[str]

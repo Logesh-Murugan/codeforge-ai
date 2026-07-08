@@ -18,6 +18,7 @@ interface AgentRun {
 const AGENT_ORDER = [
   "project_manager",
   "business_analyst",
+  "product_owner",
   "solution_architect",
   "backend_developer",
   "code_reviewer",
@@ -34,6 +35,11 @@ const AGENT_META: Record<string, { label: string; icon: string; desc: string }> 
     label: "Business Analyst",
     icon: "📊",
     desc: "Extracts data entities, core actions, and auth requirements from the plan.",
+  },
+  product_owner: {
+    label: "Product Owner",
+    icon: "👑",
+    desc: "Prioritizes backlog (MoSCoW), sprint goals, and details user story acceptance criteria.",
   },
   solution_architect: {
     label: "Solution Architect",
@@ -69,7 +75,7 @@ export default function ProjectStatusPage() {
   const [activeFixedFile, setActiveFixedFile] = useState<string>("");
   const [logs, setLogs] = useState<string[]>([]);
 
-  const isAllDone = runs.length === 6 && runs.every((r) => r.status === "completed");
+  const isAllDone = runs.length === 7 && runs.every((r) => r.status === "completed");
   const anyFailed = runs.some((r) => r.status === "failed");
 
   // Determine current active agent based on run status
@@ -408,6 +414,125 @@ export default function ProjectStatusPage() {
                 </ul>
               </div>
             )}
+          </div>
+        );
+
+      case "product_owner":
+        return (
+          <div className="space-y-6">
+            {/* Sprint Goals */}
+            {data.sprint_goals?.length > 0 && (
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-5">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block mb-2">Sprint Goals</span>
+                <ul className="space-y-1.5 text-xs text-white leading-relaxed">
+                  {data.sprint_goals.map((goal: string, i: number) => (
+                    <li key={i} className="flex items-start space-x-2">
+                      <span className="text-indigo-400 mt-0.5">•</span>
+                      <span>{goal}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Backlog Items */}
+            {data.backlog?.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Prioritized Product Backlog</h4>
+                <div className="overflow-x-auto border border-white/5 rounded-2xl">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-white/5 border-b border-white/5 text-gray-400">
+                        <th className="px-4 py-3">Feature</th>
+                        <th className="px-4 py-3">Priority Score</th>
+                        <th className="px-4 py-3">Value</th>
+                        <th className="px-4 py-3">Risk</th>
+                        <th className="px-4 py-3">Dependencies</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {data.backlog.map((item: any, i: number) => {
+                        const scoreColor =
+                          item.priority_score >= 8 ? "text-red-400 font-bold" :
+                          item.priority_score >= 5 ? "text-amber-400 font-bold" :
+                          "text-emerald-400";
+                        const valueColor =
+                          item.business_value === "high" ? "bg-red-500/10 text-red-400 border-red-500/20" :
+                          item.business_value === "medium" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                          "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                        const riskColor =
+                          item.risk_level === "high" ? "bg-red-500/10 text-red-400 border-red-500/20" :
+                          item.risk_level === "medium" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                          "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                        return (
+                          <tr key={i} className="hover:bg-white/5 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="font-bold text-white mb-0.5">{item.feature_name}</div>
+                              <div className="text-[11px] text-gray-400 leading-relaxed">{item.description}</div>
+                              {item.acceptance_criteria?.length > 0 && (
+                                <div className="mt-1.5 pl-2 border-l border-white/10 space-y-1">
+                                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block">Acceptance Criteria</span>
+                                  {item.acceptance_criteria.map((ac: string, j: number) => (
+                                    <div key={j} className="text-[10px] text-gray-500 flex items-center space-x-1.5">
+                                      <span>◽</span>
+                                      <span>{ac}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 font-mono text-center">
+                              <span className={scoreColor}>{item.priority_score} / 10</span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`px-2 py-0.5 rounded text-[10px] uppercase border ${valueColor}`}>
+                                {item.business_value}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`px-2 py-0.5 rounded text-[10px] uppercase border ${riskColor}`}>
+                                {item.risk_level}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 font-mono text-[10px] text-gray-400">
+                              {item.dependencies?.length > 0 ? item.dependencies.join(", ") : "None"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* MoSCoW Categories Overview */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-4">
+                <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider block mb-2">🔴 Must Have Features</span>
+                <ul className="space-y-1 text-xs text-gray-300">
+                  {data.must_have_features?.map((f: string, i: number) => <li key={i}>• {f}</li>)}
+                </ul>
+              </div>
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-4">
+                <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block mb-2">🟡 Should Have Features</span>
+                <ul className="space-y-1 text-xs text-gray-300">
+                  {data.should_have_features?.map((f: string, i: number) => <li key={i}>• {f}</li>)}
+                </ul>
+              </div>
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-4">
+                <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-2">🟢 Could Have Features</span>
+                <ul className="space-y-1 text-xs text-gray-300">
+                  {data.could_have_features?.map((f: string, i: number) => <li key={i}>• {f}</li>)}
+                </ul>
+              </div>
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-4">
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-2">⚪ Won't Have (Deferred)</span>
+                <ul className="space-y-1 text-xs text-gray-500">
+                  {data.wont_have_features?.map((f: string, i: number) => <li key={i}>• {f}</li>)}
+                </ul>
+              </div>
+            </div>
           </div>
         );
 

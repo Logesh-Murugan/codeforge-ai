@@ -74,8 +74,8 @@ async def main():
                 if r.error_message:
                     print(f"   ↳ Error: {r.error_message}")
         
-        if all_passed and len(runs) == 6:
-            print("\n[SUCCESS] All 6 agents completed successfully!")
+        if all_passed and len(runs) == 7:
+            print("\n[SUCCESS] All 7 agents completed successfully!")
             
             # Check generated files in DB
             result = await session.execute(select(Project).where(Project.id == project_id))

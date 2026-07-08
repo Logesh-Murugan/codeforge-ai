@@ -8,6 +8,7 @@ from app.models import Project, AgentRun
 from agents.base_agent import AgentExecutionError
 from agents.project_manager import ProjectManagerAgent
 from agents.business_analyst import BusinessAnalystAgent
+from agents.product_owner import ProductOwnerAgent
 from agents.solution_architect import SolutionArchitectAgent
 from agents.backend_developer import BackendDeveloperAgent
 from agents.code_reviewer import CodeReviewerAgent
@@ -22,6 +23,7 @@ class AgentState(TypedDict):
     project_idea: str
     project_plan: dict | None
     business_requirements: dict | None
+    product_owner_plan: dict | None
     solution_arch: dict | None
     backend_code: dict | None
     code_review: dict | None
@@ -168,7 +170,7 @@ async def business_analyst_node(state: AgentState) -> AgentState:
         return {
             **state,
             "business_requirements": result.model_dump(),
-            "current_agent": "solution_architect",
+            "current_agent": "product_owner",
             "error": None
         }
     except Exception as e:
@@ -184,10 +186,59 @@ async def business_analyst_node(state: AgentState) -> AgentState:
         }
 
 
+async def product_owner_node(state: AgentState) -> AgentState:
+    """Run the Product Owner agent."""
+    project_id = state["project_id"]
+    project_plan = state.get("project_plan")
+    business_requirements = state.get("business_requirements")
+    
+    # Create agent run
+    agent_run = await create_agent_run(project_id, "product_owner", "running")
+    
+    try:
+        if not project_plan:
+            raise ValueError("project_plan is required for Product Owner")
+        if not business_requirements:
+            raise ValueError("business_requirements is required for Product Owner")
+            
+        agent = ProductOwnerAgent()
+        from app.schemas import ProjectManagerResponse, BusinessAnalystResponse
+        result = agent.run(
+            ProjectManagerResponse(**project_plan),
+            BusinessAnalystResponse(**business_requirements)
+        )
+        
+        # Update agent run
+        await update_agent_run(
+            agent_run.id,
+            "completed",
+            output_json=result.model_dump()
+        )
+        
+        return {
+            **state,
+            "product_owner_plan": result.model_dump(),
+            "current_agent": "solution_architect",
+            "error": None
+        }
+    except Exception as e:
+        logger.error(f"Product Owner agent failed: {e}", exc_info=True)
+        await update_agent_run(
+            agent_run.id,
+            "failed",
+            error_message=str(e)
+        )
+        return {
+            **state,
+            "error": str(e)
+        }
+
+
 async def solution_architect_node(state: AgentState) -> AgentState:
     """Run the Solution Architect agent."""
     project_id = state["project_id"]
     business_requirements = state["business_requirements"]
+    product_owner_plan = state.get("product_owner_plan")
     
     # Create agent run
     agent_run = await create_agent_run(project_id, "solution_architect", "running")
@@ -196,8 +247,12 @@ async def solution_architect_node(state: AgentState) -> AgentState:
         if not business_requirements:
             raise ValueError("business_requirements is required")
         agent = SolutionArchitectAgent()
-        from app.schemas import BusinessAnalystResponse
-        result = agent.run(BusinessAnalystResponse(**business_requirements))
+        from app.schemas import BusinessAnalystResponse, ProductOwnerResponse
+        po_plan = ProductOwnerResponse(**product_owner_plan) if product_owner_plan else None
+        result = agent.run(
+            BusinessAnalystResponse(**business_requirements),
+            product_owner_plan=po_plan
+        )
         
         # Update agent run
         await update_agent_run(
@@ -371,6 +426,8 @@ def should_continue(state: AgentState) -> str:
         return END
     if state.get("current_agent") == "business_analyst":
         return "business_analyst"
+    if state.get("current_agent") == "product_owner":
+        return "product_owner"
     if state.get("current_agent") == "solution_architect":
         return "solution_architect"
     if state.get("current_agent") == "backend_developer":
@@ -387,6 +444,7 @@ graph = StateGraph(AgentState)
 
 graph.add_node("project_manager", project_manager_node)
 graph.add_node("business_analyst", business_analyst_node)
+graph.add_node("product_owner", product_owner_node)
 graph.add_node("solution_architect", solution_architect_node)
 graph.add_node("backend_developer", backend_developer_node)
 graph.add_node("code_reviewer", code_reviewer_node)
@@ -395,6 +453,7 @@ graph.add_node("doc_writer", doc_writer_node)
 graph.set_entry_point("project_manager")
 graph.add_conditional_edges("project_manager", should_continue)
 graph.add_conditional_edges("business_analyst", should_continue)
+graph.add_conditional_edges("product_owner", should_continue)
 graph.add_conditional_edges("solution_architect", should_continue)
 graph.add_conditional_edges("backend_developer", should_continue)
 graph.add_conditional_edges("code_reviewer", should_continue)
@@ -411,6 +470,7 @@ async def run_pipeline(project_id: int, project_idea: str):
         "project_idea": project_idea,
         "project_plan": None,
         "business_requirements": None,
+        "product_owner_plan": None,
         "solution_arch": None,
         "backend_code": None,
         "code_review": None,

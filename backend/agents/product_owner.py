@@ -5,13 +5,13 @@ from typing import Optional
 from pydantic import ValidationError
 
 from agents.base_agent import BaseAgent, AgentExecutionError
-from app.schemas import BusinessAnalystResponse, SolutionArchitectResponse, ProductOwnerResponse
+from app.schemas import ProductOwnerResponse, ProjectManagerResponse, BusinessAnalystResponse
 
 logger = logging.getLogger(__name__)
 
 
-class SolutionArchitectAgent:
-    """Agent that designs the technical solution from business requirements."""
+class ProductOwnerAgent:
+    """Agent that creates a prioritized product backlog from project manager plan and business requirements."""
 
     def __init__(self):
         # Load the system prompt from file
@@ -19,7 +19,7 @@ class SolutionArchitectAgent:
             os.path.dirname(__file__),
             "..",
             "prompts",
-            "solution_architect.md"
+            "product_owner.md"
         )
         with open(prompt_path, "r", encoding="utf-8") as f:
             self.system_prompt = f.read()
@@ -29,29 +29,26 @@ class SolutionArchitectAgent:
             model="llama-3.3-70b-versatile"
         )
 
-    def run(self, business_requirements: BusinessAnalystResponse, product_owner_plan: Optional[ProductOwnerResponse] = None) -> SolutionArchitectResponse:
+    def run(self, project_plan: ProjectManagerResponse, business_requirements: BusinessAnalystResponse) -> ProductOwnerResponse:
         """
-        Run the solution architect agent.
+        Run the product owner agent.
         
         Args:
-            business_requirements: The output from the Business Analyst agent.
-            product_owner_plan: Optional output from the Product Owner agent.
+            project_plan: The project manager's plan.
+            business_requirements: The business analyst's requirements.
             
         Returns:
-            Structured SolutionArchitectResponse.
+            Structured ProductOwnerResponse.
             
         Raises:
-            AgentExecutionError: If the agent fails.
+            AgentExecutionError: If execution fails.
         """
-        # Convert inputs to JSON string (supporting backward compatibility)
-        if product_owner_plan:
-            input_data = {
-                "business_requirements": business_requirements.model_dump(),
-                "product_owner_prioritization": product_owner_plan.model_dump()
-            }
-            input_str = json.dumps(input_data, indent=2)
-        else:
-            input_str = business_requirements.model_dump_json(indent=2)
+        # Package inputs into a unified JSON context
+        input_data = {
+            "project_plan": project_plan.model_dump(),
+            "business_requirements": business_requirements.model_dump()
+        }
+        input_str = json.dumps(input_data, indent=2)
 
         # First attempt
         try:
@@ -72,7 +69,7 @@ class SolutionArchitectAgent:
             logger.error(f"Second attempt failed: {str(e)}")
             raise AgentExecutionError(f"Failed to get valid JSON after two attempts: {str(e)}") from e
 
-    def _parse_response(self, response_str: str) -> SolutionArchitectResponse:
+    def _parse_response(self, response_str: str) -> ProductOwnerResponse:
         """Parse and validate the agent's response."""
         # Clean up the response string (remove any markdown fences)
         cleaned = response_str.strip()
@@ -88,4 +85,4 @@ class SolutionArchitectAgent:
         data = json.loads(cleaned)
 
         # Validate with Pydantic
-        return SolutionArchitectResponse(**data)
+        return ProductOwnerResponse(**data)
