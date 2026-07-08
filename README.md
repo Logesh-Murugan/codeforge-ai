@@ -18,11 +18,12 @@
 
 ## 📐 System Architecture & Flow
 
-CodeForge AI runs a deterministic **5-Agent LangGraph state machine**. Each agent operates as a specialized role within a simulated software development team to construct, verify, and document your app:
+CodeForge AI runs a deterministic **6-Agent LangGraph state machine**. Each agent operates as a specialized role within a simulated software development team to construct, verify, and document your app:
 
 ```mermaid
 flowchart TD
-    A[User Prompt] --> BA[Business Analyst Agent]
+    A[User Prompt] --> PM[Project Manager Agent]
+    PM -->|Project Plan| BA[Business Analyst Agent]
     BA -->|User Stories & Entities| SA[Solution Architect Agent]
     SA -->|DB Schema & Endpoints| BD[Backend Developer Agent]
     BD -->|FastAPI Codebase| CR[Code Reviewer Agent]
@@ -33,10 +34,11 @@ flowchart TD
 
 ### 👥 Meet the Developer Agents
 
-*   **🕵️‍♂️ Business Analyst (Llama 3.1-8b)**: Analyzes user requirements to define user stories, map database entities, model constraints, and build the specification checklist.
+*   **📋 Project Manager (Llama 3.3-70b)**: Receives the raw project description, creates the master project plan with goals and milestones, estimates complexity, and defines agent execution dependencies.
+*   **🕵️‍♂️ Business Analyst (Llama 3.1-8b)**: Analyzes the project manager's plan and user requirements to define user stories, map database entities, model constraints, and build the specification checklist.
 *   **📐 Solution Architect (Llama 3.3-70b)**: Designs database schemas, relationships, indexes, and models RESTful API routes (`GET`, `POST`, `PUT`, `DELETE`).
 *   **💻 Backend Developer (Llama 3.3-70b)**: Implements database connections, SQLAlchemy models, Pydantic schemas, routes, and custom operations.
-*   **🔍 Code Reviewer (Llama 3.3-70b)**: Audits code for security (SQL injections, CORS limits), style guides, and **automatically applies fixes** to the codebase.
+*   **🔍 Code Reviewer (Llama 3.3-70b)**: Audits code for security (SQL injections, CORS limits, broken data ownership), style guides, and **automatically applies fixes** to the codebase.
 *   **✍️ Documentation Writer (Llama 3.1-8b)**: Generates a complete, professional user guide and `README.md` custom-tailored to the output codebase.
 
 ---
