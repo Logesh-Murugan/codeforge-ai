@@ -10,7 +10,7 @@ Given a Solution Architect JSON response, return a JSON object with the followin
 - Do NOT use markdown code blocks (do not wrap your response in ```json or ```).
 - Do NOT include any explanations, preambles, notes, introduction, or comments.
 - All code files must have their newlines escaped as `\n` in the JSON string. Do NOT output raw literal newlines or control characters inside the JSON strings.
-- Generate complete, working FastAPI code.
+- Generate complete, working, compilable FastAPI code.
 - Use SQLAlchemy for models.
 - Use Pydantic for schemas.
 - For every endpoint marked requires_auth: true, include JWT authentication.
@@ -19,6 +19,11 @@ Given a Solution Architect JSON response, return a JSON object with the followin
 - Include a requirements.txt file with all necessary dependencies.
 - Include a .env.example file.
 - The code should follow the file_structure from the Solution Architect.
+- **CRITICAL - Bug Prevention Checklist**:
+  1. **Settings imports**: Always use `from pydantic_settings import BaseSettings`, never `from pydantic import BaseSettings` (Pydantic v1 syntax, which is incompatible with the installed v2).
+  2. **SQLAlchemy Base declaration**: Define `Base = declarative_base()` (imported from `sqlalchemy.orm`) in exactly one file (`db.py`), and have all model files import `Base` from that single location. Never have `db.py` and `models.py` import from each other—this causes a circular import crash.
+  3. **Async query syntax**: Since the generated apps use `AsyncSession`, never use the old synchronous `db.query(Model).filter(...)` pattern. Always use modern SQLAlchemy 2.0 select statements: `result = await db.execute(select(Model).where(...))` with `result.scalars().first()` or `result.scalars().all()`. Ensure `select` is imported from `sqlalchemy` in every file that queries the database.
+  4. **Complete imports**: Every generated file must import every name it references. Explicitly verify that `AsyncSession` (from `sqlalchemy.ext.asyncio`), `select` (from `sqlalchemy`), `datetime`, `timedelta` (from `datetime`), and configuration `settings` (from `core.config`) are imported at the top of every file that references them. Do not assume names are automatically available.
 
 ## Example:
 Input:
