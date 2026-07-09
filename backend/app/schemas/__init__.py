@@ -6,6 +6,7 @@ from app.schemas.agents import (
     BusinessAnalystResponse,
     ProductOwnerResponse,
     SolutionArchitectResponse,
+    DatabaseEngineerResponse,
     BackendDeveloperResponse,
     FrontendDeveloperResponse,
     CodeReviewerResponse,
@@ -16,7 +17,7 @@ from app.schemas.agents import (
 __all__ = [
     "UserCreate", "UserLogin", "UserResponse", "ProjectCreate", "ProjectResponse", "Token",
     "ProjectManagerResponse", "BusinessAnalystResponse", "ProductOwnerResponse", "SolutionArchitectResponse",
-    "BackendDeveloperResponse", "FrontendDeveloperResponse", "CodeReviewerResponse",
+    "DatabaseEngineerResponse", "BackendDeveloperResponse", "FrontendDeveloperResponse", "CodeReviewerResponse",
     "AgentRunResponse", "GenerateProjectRequest"
 ]
 

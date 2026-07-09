@@ -1,22 +1,26 @@
 from pydantic import BaseModel
 from datetime import datetime
 
+
 class UserCreate(BaseModel):
-    email: str
     username: str
+    email: str
     password: str
+
 
 class User(BaseModel):
     id: int
-    email: str
     username: str
+    email: str
     created_at: datetime
 
     class Config:
         orm_mode = True
 
+
 class NoteCreate(BaseModel):
     content: str
+
 
 class Note(BaseModel):
     id: int

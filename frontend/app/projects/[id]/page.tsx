@@ -20,6 +20,7 @@ const AGENT_ORDER = [
   "business_analyst",
   "product_owner",
   "solution_architect",
+  "database_engineer",
   "backend_developer",
   "frontend_developer",
   "code_reviewer",
@@ -46,6 +47,11 @@ const AGENT_META: Record<string, { label: string; icon: string; desc: string }> 
     label: "Solution Architect",
     icon: "📐",
     desc: "Designs the PostgreSQL schema, API endpoints, and codebase directory layout.",
+  },
+  database_engineer: {
+    label: "Database Engineer",
+    icon: "🗄️",
+    desc: "Builds indexes, relationships cardinality, migration DDLs, normalizes schema, and formats SQLAlchemy code.",
   },
   backend_developer: {
     label: "Backend Developer",
@@ -81,7 +87,7 @@ export default function ProjectStatusPage() {
   const [activeFixedFile, setActiveFixedFile] = useState<string>("");
   const [logs, setLogs] = useState<string[]>([]);
 
-  const isAllDone = runs.length === 8 && runs.every((r) => r.status === "completed");
+  const isAllDone = runs.length === 9 && runs.every((r) => r.status === "completed");
   const anyFailed = runs.some((r) => r.status === "failed");
 
   // Determine current active agent based on run status
@@ -623,6 +629,125 @@ export default function ProjectStatusPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+          </div>
+        );
+
+      case "database_engineer":
+        return (
+          <div className="space-y-6">
+            {/* ER Diagram */}
+            {data.er_diagram_mermaid && (
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Mermaid ER Diagram</span>
+                <pre className="bg-black/40 rounded-xl p-4 font-mono text-xs text-indigo-200 border border-white/5 overflow-x-auto">
+                  {data.er_diagram_mermaid}
+                </pre>
+              </div>
+            )}
+
+            {/* Schema Details */}
+            {data.db_schema_details && (
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Database Schema Specifications</span>
+                <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{data.db_schema_details}</p>
+              </div>
+            )}
+
+            {/* Indexes & Relationships Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Indexes */}
+              {data.indexes?.length > 0 && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Defined Indexes</span>
+                  <div className="overflow-x-auto border border-white/5 rounded-xl text-[11px]">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-white/5 border-b border-white/5 text-gray-400">
+                          <th className="px-3 py-2">Index Name</th>
+                          <th className="px-3 py-2">Table</th>
+                          <th className="px-3 py-2">Columns</th>
+                          <th className="px-3 py-2 text-right">Unique</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 text-gray-300">
+                        {data.indexes.map((idx: any, i: number) => (
+                          <tr key={i} className="hover:bg-white/5">
+                            <td className="px-3 py-2 font-mono text-indigo-300">{idx.name}</td>
+                            <td className="px-3 py-2">{idx.table}</td>
+                            <td className="px-3 py-2 font-mono">{idx.columns?.join(", ")}</td>
+                            <td className="px-3 py-2 text-right">{idx.unique ? "Yes" : "No"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Relationships */}
+              {data.relationships?.length > 0 && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Relationships & Cardinalities</span>
+                  <div className="overflow-x-auto border border-white/5 rounded-xl text-[11px]">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-white/5 border-b border-white/5 text-gray-400">
+                          <th className="px-3 py-2">Relationship</th>
+                          <th className="px-3 py-2">Connection</th>
+                          <th className="px-3 py-2 text-right">Cardinality</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 text-gray-300">
+                        {data.relationships.map((rel: any, i: number) => (
+                          <tr key={i} className="hover:bg-white/5">
+                            <td className="px-3 py-2 font-bold text-white">{rel.name}</td>
+                            <td className="px-3 py-2 font-mono">
+                              {rel.from_table}({rel.from_columns?.join(",")}) → {rel.to_table}({rel.to_columns?.join(",")})
+                            </td>
+                            <td className="px-3 py-2 text-right text-indigo-400 font-semibold">{rel.cardinality}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Normalization & Migration SQL */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Normalization */}
+              {data.normalization_review && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Normalization Review</span>
+                  <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{data.normalization_review}</p>
+                </div>
+              )}
+
+              {/* Migration script */}
+              {data.migration_plan?.length > 0 && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">DDL Migration SQL Plan</span>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {data.migration_plan.map((sql: string, i: number) => (
+                      <pre key={i} className="bg-black/30 border border-white/5 rounded-xl p-2.5 font-mono text-[10px] text-indigo-300 whitespace-pre-wrap">
+                        {sql}
+                      </pre>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* SQLAlchemy Models Code */}
+            {data.sqlalchemy_models_code && (
+              <div className="space-y-2">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Declarative SQLAlchemy Models (Python Code)</span>
+                <pre className="bg-[#0a0d1e] border border-white/5 rounded-2xl p-5 font-mono text-xs text-gray-300 whitespace-pre overflow-x-auto leading-relaxed max-h-80">
+                  {data.sqlalchemy_models_code}
+                </pre>
               </div>
             )}
           </div>

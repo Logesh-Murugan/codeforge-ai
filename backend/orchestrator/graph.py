@@ -10,6 +10,7 @@ from agents.project_manager import ProjectManagerAgent
 from agents.business_analyst import BusinessAnalystAgent
 from agents.product_owner import ProductOwnerAgent
 from agents.solution_architect import SolutionArchitectAgent
+from agents.database_engineer import DatabaseEngineerAgent
 from agents.backend_developer import BackendDeveloperAgent
 from agents.frontend_developer import FrontendDeveloperAgent
 from agents.code_reviewer import CodeReviewerAgent
@@ -26,6 +27,7 @@ class AgentState(TypedDict):
     business_requirements: dict | None
     product_owner_plan: dict | None
     solution_arch: dict | None
+    db_engineer_plan: dict | None
     backend_code: dict | None
     frontend_code: dict | None
     code_review: dict | None
@@ -266,7 +268,7 @@ async def solution_architect_node(state: AgentState) -> AgentState:
         return {
             **state,
             "solution_arch": result.model_dump(),
-            "current_agent": "backend_developer",
+            "current_agent": "database_engineer",
             "error": None
         }
     except Exception as e:
@@ -282,10 +284,53 @@ async def solution_architect_node(state: AgentState) -> AgentState:
         }
 
 
+async def database_engineer_node(state: AgentState) -> AgentState:
+    """Run the Database Engineer agent."""
+    project_id = state["project_id"]
+    solution_arch = state["solution_arch"]
+    
+    # Create agent run
+    agent_run = await create_agent_run(project_id, "database_engineer", "running")
+    
+    try:
+        if not solution_arch:
+            raise ValueError("solution_arch is required for Database Engineer")
+            
+        agent = DatabaseEngineerAgent()
+        from app.schemas import SolutionArchitectResponse
+        result = agent.run(SolutionArchitectResponse(**solution_arch))
+        
+        # Update agent run
+        await update_agent_run(
+            agent_run.id,
+            "completed",
+            output_json=result.model_dump()
+        )
+        
+        return {
+            **state,
+            "db_engineer_plan": result.model_dump(),
+            "current_agent": "backend_developer",
+            "error": None
+        }
+    except Exception as e:
+        logger.error(f"Database Engineer agent failed: {e}", exc_info=True)
+        await update_agent_run(
+            agent_run.id,
+            "failed",
+            error_message=str(e)
+        )
+        return {
+            **state,
+            "error": str(e)
+        }
+
+
 async def backend_developer_node(state: AgentState) -> AgentState:
     """Run the Backend Developer agent."""
     project_id = state["project_id"]
     solution_arch = state["solution_arch"]
+    db_engineer_plan = state.get("db_engineer_plan")
     
     # Create agent run
     agent_run = await create_agent_run(project_id, "backend_developer", "running")
@@ -294,8 +339,12 @@ async def backend_developer_node(state: AgentState) -> AgentState:
         if not solution_arch:
             raise ValueError("solution_arch is required")
         agent = BackendDeveloperAgent()
-        from app.schemas import SolutionArchitectResponse, BackendDeveloperResponse
-        result = agent.run(SolutionArchitectResponse(**solution_arch))
+        from app.schemas import SolutionArchitectResponse, BackendDeveloperResponse, DatabaseEngineerResponse
+        db_plan = DatabaseEngineerResponse(**db_engineer_plan) if db_engineer_plan else None
+        result = agent.run(
+            SolutionArchitectResponse(**solution_arch),
+            db_engineer_plan=db_plan
+        )
         
         # Update agent run
         await update_agent_run(
@@ -488,6 +537,8 @@ def should_continue(state: AgentState) -> str:
         return "product_owner"
     if state.get("current_agent") == "solution_architect":
         return "solution_architect"
+    if state.get("current_agent") == "database_engineer":
+        return "database_engineer"
     if state.get("current_agent") == "backend_developer":
         return "backend_developer"
     if state.get("current_agent") == "frontend_developer":
@@ -506,6 +557,7 @@ graph.add_node("project_manager", project_manager_node)
 graph.add_node("business_analyst", business_analyst_node)
 graph.add_node("product_owner", product_owner_node)
 graph.add_node("solution_architect", solution_architect_node)
+graph.add_node("database_engineer", database_engineer_node)
 graph.add_node("backend_developer", backend_developer_node)
 graph.add_node("frontend_developer", frontend_developer_node)
 graph.add_node("code_reviewer", code_reviewer_node)
@@ -516,6 +568,7 @@ graph.add_conditional_edges("project_manager", should_continue)
 graph.add_conditional_edges("business_analyst", should_continue)
 graph.add_conditional_edges("product_owner", should_continue)
 graph.add_conditional_edges("solution_architect", should_continue)
+graph.add_conditional_edges("database_engineer", should_continue)
 graph.add_conditional_edges("backend_developer", should_continue)
 graph.add_conditional_edges("frontend_developer", should_continue)
 graph.add_conditional_edges("code_reviewer", should_continue)
@@ -534,6 +587,7 @@ async def run_pipeline(project_id: int, project_idea: str):
         "business_requirements": None,
         "product_owner_plan": None,
         "solution_arch": None,
+        "db_engineer_plan": None,
         "backend_code": None,
         "frontend_code": None,
         "code_review": None,

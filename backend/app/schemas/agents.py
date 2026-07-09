@@ -94,6 +94,32 @@ class SolutionArchitectResponse(BaseModel):
     file_structure: List[str]
 
 
+class DBIndex(BaseModel):
+    name: str
+    table: str
+    columns: List[str]
+    unique: bool
+
+
+class DBRelationship(BaseModel):
+    name: str
+    from_table: str
+    from_columns: List[str]
+    to_table: str
+    to_columns: List[str]
+    cardinality: str  # one_to_many, one_to_one, many_to_many
+
+
+class DatabaseEngineerResponse(BaseModel):
+    er_diagram_mermaid: str
+    db_schema_details: str
+    indexes: List[DBIndex]
+    relationships: List[DBRelationship]
+    migration_plan: List[str]
+    normalization_review: str
+    sqlalchemy_models_code: str
+
+
 class GeneratedFile(BaseModel):
     path: str
     content: str

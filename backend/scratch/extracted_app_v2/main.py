@@ -14,7 +14,7 @@ app.include_router(auth_router)
 app.include_router(notes_router)
 
 origins = [
-    "http://localhost:3000",
+    "*",
 ]
 
 app.add_middleware(
