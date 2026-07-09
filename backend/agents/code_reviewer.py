@@ -79,5 +79,13 @@ class CodeReviewerAgent:
         # Parse JSON
         data = json.loads(cleaned)
 
+        # Clean double-escaped newlines in generated auto-fixed files
+        if isinstance(data, dict) and "auto_fixed_files" in data:
+            for file in data["auto_fixed_files"]:
+                if "content" in file and isinstance(file["content"], str):
+                    content = file["content"]
+                    if "\\n" in content and "\n" not in content:
+                        file["content"] = content.replace("\\n", "\n")
+
         # Validate with Pydantic
         return CodeReviewerResponse(**data)

@@ -128,6 +128,14 @@ class BackendDeveloperAgent:
             logger.error(f"Target string for parsing:\n{cleaned}")
             raise
 
+        # Clean double-escaped newlines in generated files
+        if isinstance(data, dict) and "files" in data:
+            for file in data["files"]:
+                if "content" in file and isinstance(file["content"], str):
+                    content = file["content"]
+                    if "\\n" in content and "\n" not in content:
+                        file["content"] = content.replace("\\n", "\n")
+
         # 4. Validate with Pydantic
         try:
             return BackendDeveloperResponse(**data)

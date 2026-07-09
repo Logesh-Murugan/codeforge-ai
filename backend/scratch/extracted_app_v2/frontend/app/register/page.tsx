@@ -5,11 +5,11 @@ export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { handleRegister, isLoading, isError, error } = useRegister();
+  const { mutate, isLoading, error } = useRegister();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    handleRegister();
+    mutate({ username, email, password });
   };
 
   return (
@@ -18,23 +18,23 @@ export default function RegisterPage() {
       <form onSubmit={handleSubmit}>
         <label>
           Username:
-          <input type='text' value={username} onChange={(event) => setUsername(event.target.value)} />
+          <input type="text" value={username} onChange={(event) => setUsername(event.target.value)} />
         </label>
         <br />
         <label>
           Email:
-          <input type='email' value={email} onChange={(event) => setEmail(event.target.value)} />
+          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
         </label>
         <br />
         <label>
           Password:
-          <input type='password' value={password} onChange={(event) => setPassword(event.target.value)} />
+          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
         </label>
         <br />
-        <button type='submit'>Register</button>
-        {isLoading ? <div>Loading...</div> : null}
-        {isError ? <div>Error: {error.message}</div> : null}
+        <button type="submit">Register</button>
       </form>
+      {isLoading ? <div>Loading...</div> : null}
+      {error ? <div>Error: {error.message}</div> : null}
     </div>
   );
 }

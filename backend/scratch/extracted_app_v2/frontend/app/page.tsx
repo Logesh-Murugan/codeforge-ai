@@ -1,25 +1,17 @@
 import React from 'react';
-import { useNotes } from '../lib/api';
+import { useGetNotes } from '../lib/api';
+import { NoteList } from '../components/NoteList';
 
 export default function HomePage() {
-  const { data, error, isLoading, isError } = useNotes();
+  const { data, isLoading, error } = useGetNotes();
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (isError) {
-    return <div>Error: {error.message}</div>;
-  }
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
     <div>
       <h1>Notes</h1>
-      <ul>
-        {data.map((note) => (
-          <li key={note.id}>{note.content}</li>
-        ))}
-      </ul>
+      <NoteList notes={data} />
     </div>
   );
 }

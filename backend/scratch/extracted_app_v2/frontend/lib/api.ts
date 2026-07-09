@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const apiURL = 'http://localhost:8000';
 
-export function useLogin() {
+const useLogin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
 
-  const { mutate, isLoading, isError } = useMutation(
+  const { mutate, isLoading, error } = useMutation(
     async () => {
       const response = await fetch(`${apiURL}/auth/login`, {
         method: 'POST',
@@ -17,30 +17,26 @@ export function useLogin() {
         },
         body: JSON.stringify({ username, password }),
       });
-      const data = await response.json();
-      return data;
+      return response.json();
     },
     {
       onSuccess: (data) => {
         localStorage.setItem('token', data.access_token);
+        queryClient.invalidateQueries();
       },
     }
   );
 
-  const handleLogin = async () => {
-    mutate();
-  };
+  return { mutate, isLoading, error };
+};
 
-  return { handleLogin, isLoading, isError, error };
-}
-
-export function useRegister() {
+const useRegister = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
 
-  const { mutate, isLoading, isError } = useMutation(
+  const { mutate, isLoading, error } = useMutation(
     async () => {
       const response = await fetch(`${apiURL}/auth/register`, {
         method: 'POST',
@@ -49,60 +45,66 @@ export function useRegister() {
         },
         body: JSON.stringify({ username, email, password }),
       });
-      const data = await response.json();
-      return data;
+      return response.json();
     },
     {
       onSuccess: (data) => {
         localStorage.setItem('token', data.access_token);
+        queryClient.invalidateQueries();
       },
     }
   );
 
-  const handleRegister = async () => {
-    mutate();
-  };
+  return { mutate, isLoading, error };
+};
 
-  return { handleRegister, isLoading, isError, error };
-}
+const useGetNotes = () => {
+  const token = localStorage.getItem('token');
+  const queryClient = useQueryClient();
 
-export function useNotes() {
-  const { data, error, isLoading, isError } = useQuery(
-    'notes',
+  const { data, isLoading, error } = useQuery(
+    ['notes'],
     async () => {
       const response = await fetch(`${apiURL}/notes`, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-      const data = await response.json();
-      return data;
+      return response.json();
+    },
+    {
+      staleTime: 10000,
     }
   );
 
-  return { data, error, isLoading, isError };
-}
+  return { data, isLoading, error };
+};
 
-export function useCreateNote() {
-  const { mutate, isLoading, isError } = useMutation(
+const useCreateNote = () => {
+  const token = localStorage.getItem('token');
+  const queryClient = useQueryClient();
+
+  const { mutate, isLoading, error } = useMutation(
     async (note) => {
       const response = await fetch(`${apiURL}/notes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(note),
       });
-      const data = await response.json();
-      return data;
+      return response.json();
+    },
+    {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries('notes');
+      },
     }
   );
 
-  const handleCreateNote = async (note) => {
-    mutate(note);
-  };
+  return { mutate, isLoading, error };
+};
 
-  return { handleCreateNote, isLoading, isError };
-}
+export { useLogin, useRegister, useGetNotes, useCreateNote };

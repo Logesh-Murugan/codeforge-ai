@@ -79,5 +79,11 @@ class DatabaseEngineerAgent:
         # Parse JSON
         data = json.loads(cleaned)
 
+        # Clean double-escaped newlines in code
+        if isinstance(data, dict) and "sqlalchemy_models_code" in data:
+            code = data["sqlalchemy_models_code"]
+            if isinstance(code, str) and "\\n" in code and "\n" not in code:
+                data["sqlalchemy_models_code"] = code.replace("\\n", "\n")
+
         # Validate Pydantic model
         return DatabaseEngineerResponse(**data)

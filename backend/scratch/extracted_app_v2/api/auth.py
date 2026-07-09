@@ -1,32 +1,30 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 from core.security import authenticate_user, create_access_token
-from schemas import UserCreate
+from core.utils import get_db
 from models import User
-from db import get_db
-from core.config import settings
+from schemas import UserCreate, User
+from datetime import timedelta
 
-auth_router = APIRouter(
-    prefix='/auth',
-    tags=['auth'],
-)
 
-@auth_router.post('/register')
-async def register(user: UserCreate):
-    db = next(get_db())
-    user_obj = await db.execute('SELECT * FROM users WHERE email = :email', {'email': user.email})
-    if user_obj.first():
-        raise HTTPException(status_code=400, detail='Email already registered')
-    new_user = User(username=user.username, email=user.email, password_hash=await settings.PASSWORD_CONTEXT.hash(user.password))
-    db.add(new_user)
+auth_router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+@auth_router.post("/register")
+def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
+    db_user = User(email=user.email, username=user.username, password_hash=authenticate_user(user.email, user.password, db))
+    db.add(db_user)
     await db.commit()
-    return {'message': 'User created successfully'}
+    return {"message": "User created successfully"}
 
-@auth_router.post('/login')
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = await authenticate_user(form_data.username, form_data.password)
+@auth_router.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+    user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
-        raise HTTPException(status_code=401, detail='Invalid username or password')
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={'sub': user.id}, expires_delta=access_token_expires)
-    return {'access_token': access_token, 'token_type': 'bearer'}
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
+    return {"access_token": access_token, "token_type": "bearer"}

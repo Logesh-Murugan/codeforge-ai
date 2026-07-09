@@ -1,43 +1,17 @@
 import React from 'react';
-import { useNotes } from '../lib/api';
-import { useCreateNote } from '../lib/api';
+import { useGetNotes } from '../lib/api';
+import { NoteList } from '../components/NoteList';
 
 export default function DashboardPage() {
-  const { data, error, isLoading, isError } = useNotes();
-  const { handleCreateNote, isLoading: isCreating, isError: isCreateError } = useCreateNote();
+  const { data, isLoading, error } = useGetNotes();
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (isError) {
-    return <div>Error: {error.message}</div>;
-  }
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const note = { content: event.currentTarget.elements.content.value };
-    handleCreateNote(note);
-  };
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
     <div>
       <h1>Dashboard</h1>
-      <ul>
-        {data.map((note) => (
-          <li key={note.id}>{note.content}</li>
-        ))}
-      </ul>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Content:
-          <input type='text' name='content' />
-        </label>
-        <br />
-        <button type='submit'>Create Note</button>
-        {isCreating ? <div>Loading...</div> : null}
-        {isCreateError ? <div>Error: {error.message}</div> : null}
-      </form>
+      <NoteList notes={data} />
     </div>
   );
 }

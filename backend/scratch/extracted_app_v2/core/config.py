@@ -1,18 +1,1 @@
-from pydantic_settings import BaseSettings
-from datetime import timedelta
-
-
-class Settings(BaseSettings):
-    PROJECT_TITLE: str
-    PROJECT_DESCRIPTION: str
-    PROJECT_VERSION: str
-    DATABASE_URL: str
-    JWT_SECRET_KEY: str
-    JWT_ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
-    PASSWORD_CONTEXT: dict
-
-    class Config:
-        env_file = '.env'
-
-settings = Settings()
+from pydantic_settings import BaseSettings\n\n\nclass Settings(BaseSettings):\n    PROJECT_TITLE: str = "FastAPI Project"\n    PROJECT_DESCRIPTION: str = "FastAPI Project Description"\n    PROJECT_VERSION: str = "1.0.0"\n    API_V1_STR: str = "/api/v1"\n    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost/dbname"\n    JWT_SECRET_KEY: str = "your-secret-key-here"\n    JWT_ALGORITHM: str = "HS256"\n    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30\n\n    class Config:\n        env_file = ".env"\n        env_file_encoding = "utf-8"\n\nsettings = Settings()
