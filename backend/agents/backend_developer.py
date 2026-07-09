@@ -54,6 +54,7 @@ class BackendDeveloperAgent:
             input_str = solution_arch.model_dump_json(indent=2)
 
         # First attempt
+        response_str = None
         try:
             logger.info("Running Backend Developer Agent - Attempt 1")
             response_str = self.base_agent.run(input_str)
@@ -66,10 +67,14 @@ class BackendDeveloperAgent:
             return self._parse_response(response_str)
         except Exception as e:
             logger.warning(f"First attempt failed: {type(e).__name__}: {str(e)}. Retrying with correction...")
-            if 'response_str' in locals():
+            if response_str is not None:
                 logger.debug(f"Failed response: {response_str}")
 
         # Second attempt with correction
+        if response_str is None:
+            logger.error("First attempt failed completely (no response received). Skipping retry with correction.")
+            raise AgentExecutionError("Failed to get response on first attempt.")
+
         try:
             logger.info("Running Backend Developer Agent - Attempt 2 (Correction)")
             correction_prompt = (
