@@ -128,13 +128,16 @@ class BackendDeveloperAgent:
             logger.error(f"Target string for parsing:\n{cleaned}")
             raise
 
-        # Clean double-escaped newlines in generated files
+        # Clean double-escaped newlines and replace invalid Timestamp types with DateTime in generated files
         if isinstance(data, dict) and "files" in data:
             for file in data["files"]:
                 if "content" in file and isinstance(file["content"], str):
                     content = file["content"]
                     if "\\n" in content and "\n" not in content:
-                        file["content"] = content.replace("\\n", "\n")
+                        content = content.replace("\\n", "\n")
+                    if "Timestamp" in content and "sqlalchemy" in content:
+                        content = content.replace("Timestamp", "DateTime")
+                    file["content"] = content
 
         # 4. Validate with Pydantic
         try:

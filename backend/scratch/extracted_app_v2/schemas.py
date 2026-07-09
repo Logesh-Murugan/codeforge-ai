@@ -1,19 +1,20 @@
-from pydantic import BaseModel, EmailStr
-from datetime import datetime, timedelta
+from pydantic import BaseModel
+from datetime import datetime
 from typing import Optional
 
 
 class UserCreate(BaseModel):
-    email: EmailStr
     username: str
+    email: str
     password: str
 
 
 class User(BaseModel):
     id: int
-    email: EmailStr
     username: str
+    email: str
     created_at: datetime
+
     class Config:
         orm_mode = True
 
@@ -28,5 +29,6 @@ class Note(BaseModel):
     author_id: int
     created_at: datetime
     updated_at: datetime
+
     class Config:
         orm_mode = True

@@ -1,40 +1,51 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useRegister } from '../lib/api';
 
 export default function RegisterPage() {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { mutate, isLoading, error } = useRegister();
+  const { handleRegister, isLoading, error } = useRegister();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const [username, setUsername] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const handleUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUsername(event.target.value);
+  };
+
+  const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(event.target.value);
+  };
+
+  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(event.target.value);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    mutate({ username, email, password });
+    handleRegister();
   };
 
   return (
     <div>
-      <h1>Register</h1>
       <form onSubmit={handleSubmit}>
         <label>
           Username:
-          <input type="text" value={username} onChange={(event) => setUsername(event.target.value)} />
+          <input type="text" value={username} onChange={handleUsernameChange} />
         </label>
         <br />
         <label>
           Email:
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <input type="email" value={email} onChange={handleEmailChange} />
         </label>
         <br />
         <label>
           Password:
-          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <input type="password" value={password} onChange={handlePasswordChange} />
         </label>
         <br />
-        <button type="submit">Register</button>
+        <button type="submit" disabled={isLoading}>{isLoading ? 'Loading...' : 'Register'}</button>
+        {error && <p style={{ color: 'red' }}>{error.message}</p>}
       </form>
-      {isLoading ? <div>Loading...</div> : null}
-      {error ? <div>Error: {error.message}</div> : null}
     </div>
   );
 }

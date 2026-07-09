@@ -1,34 +1,41 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useLogin } from '../lib/api';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const { mutate, isLoading, error } = useLogin();
+  const { handleLogin, isLoading, error } = useLogin();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const handleUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUsername(event.target.value);
+  };
+
+  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(event.target.value);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    mutate({ username, password });
+    handleLogin();
   };
 
   return (
     <div>
-      <h1>Login</h1>
       <form onSubmit={handleSubmit}>
         <label>
           Username:
-          <input type="text" value={username} onChange={(event) => setUsername(event.target.value)} />
+          <input type="text" value={username} onChange={handleUsernameChange} />
         </label>
         <br />
         <label>
           Password:
-          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <input type="password" value={password} onChange={handlePasswordChange} />
         </label>
         <br />
-        <button type="submit">Login</button>
+        <button type="submit" disabled={isLoading}>{isLoading ? 'Loading...' : 'Login'}</button>
+        {error && <p style={{ color: 'red' }}>{error.message}</p>}
       </form>
-      {isLoading ? <div>Loading...</div> : null}
-      {error ? <div>Error: {error.message}</div> : null}
     </div>
   );
 }

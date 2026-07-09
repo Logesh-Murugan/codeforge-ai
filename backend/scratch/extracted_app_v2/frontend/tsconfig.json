@@ -11,10 +11,9 @@
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "isolatedModules": true,
+    "outDir": "build",
     "jsx": "preserve"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"],
-  "extends": "next"
+  "include": ["next-env.d.ts", "pages/**/*", "components/**/*", "lib/**/*"],
+  "exclude": ["node_modules"]
 }

@@ -1,17 +1,41 @@
 import React from 'react';
-import { useGetNotes } from '../lib/api';
-import { NoteList } from '../components/NoteList';
+import { useLogin } from '../lib/api';
 
 export default function HomePage() {
-  const { data, isLoading, error } = useGetNotes();
+  const { handleLogin, isLoading, error } = useLogin();
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const handleUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUsername(event.target.value);
+  };
+
+  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(event.target.value);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleLogin();
+  };
 
   return (
     <div>
-      <h1>Notes</h1>
-      <NoteList notes={data} />
+      <form onSubmit={handleSubmit}>
+        <label>
+          Username:
+          <input type="text" value={username} onChange={handleUsernameChange} />
+        </label>
+        <br />
+        <label>
+          Password:
+          <input type="password" value={password} onChange={handlePasswordChange} />
+        </label>
+        <br />
+        <button type="submit" disabled={isLoading}>{isLoading ? 'Loading...' : 'Login'}</button>
+        {error && <p style={{ color: 'red' }}>{error.message}</p>}
+      </form>
     </div>
   );
 }

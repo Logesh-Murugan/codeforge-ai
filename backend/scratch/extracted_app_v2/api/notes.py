@@ -1,1 +1,52 @@
-from fastapi import APIRouter, Depends, HTTPException, status\nfrom fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm\nfrom pydantic import ValidationError\nfrom sqlalchemy.ext.asyncio import AsyncSession\nfrom core.security import get_current_user\nfrom core.utils import get_db\nfrom models import Note\nfrom schemas import NoteCreate, Note\n\n\nnotes_router = APIRouter()\n\noauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")\n\n@notes_router.post("/")\ndef create_note(note: NoteCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):\n    db_note = Note(content=note.content, author_id=current_user.id)\n    db.add(db_note)\n    await db.commit()\n    return {"message": "Note created successfully"}\n\n@notes_router.get("/{note_id}")\ndef get_note(note_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):\n    note = await db.execute(select(Note).where(Note.id == note_id))\n    note = note.scalars().first()\n    if not note:\n        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")\n    if note.author_id != current_user.id:\n        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to access this note")\n    return note\n\n@notes_router.get("/")\ndef get_notes(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):\n    notes = await db.execute(select(Note).where(Note.author_id == current_user.id))\n    notes = notes.scalars().all()\n    return notes\n\n@notes_router.put("/{note_id}")\ndef update_note(note_id: int, note: NoteCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):\n    db_note = await db.execute(select(Note).where(Note.id == note_id))\n    db_note = db_note.scalars().first()\n    if not db_note:\n        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")\n    if db_note.author_id != current_user.id:\n        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to access this note")\n    db_note.content = note.content\n    await db.commit()\n    return {"message": "Note updated successfully"}\n\n@notes_router.delete("/{note_id}")\ndef delete_note(note_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):\n    note = await db.execute(select(Note).where(Note.id == note_id))\n    note = note.scalars().first()\n    if not note:\n        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")\n    if note.author_id != current_user.id:\n        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to access this note")\n    await db.delete(note)\n    await db.commit()\n    return {"message": "Note deleted successfully"}
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from core.security import get_current_user
+from core.config import settings
+from schemas import NoteCreate, Note
+from models import Note
+from db import db
+
+notes_router = APIRouter(
+    prefix="/notes",
+    tags=["notes"],
+)
+
+@notes_router.post("/")
+async def create_note(note: NoteCreate, current_user: User = Depends(get_current_user)):
+    note = Note(content=note.content, author_id=current_user.id)
+    db.add(note)
+    await db.commit()
+    return note
+
+@notes_router.get("/")
+async def read_notes(current_user: User = Depends(get_current_user)):
+    notes = await db.execute(select(Note).where(Note.author_id == current_user.id))
+    return notes.scalars().all()
+
+@notes_router.get("/{note_id}")
+async def read_note(note_id: int, current_user: User = Depends(get_current_user)):
+    note = await db.execute(select(Note).where(Note.id == note_id).where(Note.author_id == current_user.id))
+    note = note.scalars().first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return note
+
+@notes_router.patch("/{note_id}")
+async def update_note(note_id: int, note: NoteCreate, current_user: User = Depends(get_current_user)):
+    note_obj = await db.execute(select(Note).where(Note.id == note_id).where(Note.author_id == current_user.id))
+    note_obj = note_obj.scalars().first()
+    if not note_obj:
+        raise HTTPException(status_code=404, detail="Note not found")
+    note_obj.content = note.content
+    await db.commit()
+    return note_obj
+
+@notes_router.delete("/{note_id}")
+async def delete_note(note_id: int, current_user: User = Depends(get_current_user)):
+    note = await db.execute(select(Note).where(Note.id == note_id).where(Note.author_id == current_user.id))
+    note = note.scalars().first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    await db.delete(note)
+    await db.commit()
+    return {"message": "Note deleted"}

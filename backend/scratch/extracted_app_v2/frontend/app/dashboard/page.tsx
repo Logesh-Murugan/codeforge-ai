@@ -1,17 +1,20 @@
 import React from 'react';
-import { useGetNotes } from '../lib/api';
-import { NoteList } from '../components/NoteList';
+import { useNotes } from '../lib/api';
 
 export default function DashboardPage() {
-  const { data, isLoading, error } = useGetNotes();
+  const { data, error, isLoading } = useNotes();
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p style={{ color: 'red' }}>{error.message}</p>;
 
   return (
     <div>
-      <h1>Dashboard</h1>
-      <NoteList notes={data} />
+      <h1>Notes</h1>
+      <ul>
+        {data.map((note) => (
+          <li key={note.id}>{note.content}</li>
+        ))}
+      </ul>
     </div>
   );
 }

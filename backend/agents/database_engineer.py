@@ -79,11 +79,15 @@ class DatabaseEngineerAgent:
         # Parse JSON
         data = json.loads(cleaned)
 
-        # Clean double-escaped newlines in code
+        # Clean double-escaped newlines and replace invalid Timestamp types with DateTime in code
         if isinstance(data, dict) and "sqlalchemy_models_code" in data:
             code = data["sqlalchemy_models_code"]
-            if isinstance(code, str) and "\\n" in code and "\n" not in code:
-                data["sqlalchemy_models_code"] = code.replace("\\n", "\n")
+            if isinstance(code, str):
+                if "\\n" in code and "\n" not in code:
+                    code = code.replace("\\n", "\n")
+                if "Timestamp" in code and "sqlalchemy" in code:
+                    code = code.replace("Timestamp", "DateTime")
+                data["sqlalchemy_models_code"] = code
 
         # Validate Pydantic model
         return DatabaseEngineerResponse(**data)
