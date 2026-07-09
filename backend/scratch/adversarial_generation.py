@@ -98,7 +98,7 @@ def main():
             print(f"[!] Generation failed on agent: {failed_agent}")
             sys.exit(1)
             
-        if all_done and len(status_data) >= 8:
+        if all_done and len(status_data) >= 9:
             print(f"[+] All agents finished successfully in {int(time.time() - start_time)}s!")
             break
             
