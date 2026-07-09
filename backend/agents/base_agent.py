@@ -29,8 +29,8 @@ class BaseAgent:
         self,
         model: str = "llama-3.1-8b-instant",
         system_prompt: Optional[str] = None,
-        max_retries: int = 3,
-        initial_retry_delay: float = 1.0,
+        max_retries: int = 5,
+        initial_retry_delay: float = 5.0,
         temperature: float = 0.0,
     ):
         self.model = model

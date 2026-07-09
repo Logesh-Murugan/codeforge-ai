@@ -8,7 +8,7 @@ from app.models import AgentRun
 async def main():
     async with AsyncSessionLocal() as session:
         result = await session.execute(
-            select(AgentRun).where(AgentRun.project_id == 18).where(AgentRun.agent_name == "backend_developer")
+            select(AgentRun).where(AgentRun.project_id == 20).where(AgentRun.agent_name == "project_manager")
         )
         run = result.scalars().first()
         if run:
