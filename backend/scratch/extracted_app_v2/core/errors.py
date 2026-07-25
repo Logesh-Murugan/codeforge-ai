@@ -1,5 +1,9 @@
 from fastapi import HTTPException
 
+class InvalidCredentialsError(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=401, detail="Invalid credentials")
 
-def http_error_handler(status_code: int, detail: str):
-    return HTTPException(status_code=status_code, detail=detail)
+class NoteNotFoundError(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=404, detail="Note not found")

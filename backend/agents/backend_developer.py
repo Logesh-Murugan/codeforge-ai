@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import ValidationError
 
 from agents.base_agent import BaseAgent, AgentExecutionError
-from app.schemas import SolutionArchitectResponse, BackendDeveloperResponse, DatabaseEngineerResponse
+from app.schemas import SolutionArchitectResponse, BackendDeveloperResponse, DatabaseEngineerResponse, APIDesignerResponse
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +29,14 @@ class BackendDeveloperAgent:
             model="llama-3.3-70b-versatile"
         )
 
-    def run(self, solution_arch: SolutionArchitectResponse, db_engineer_plan: Optional[DatabaseEngineerResponse] = None) -> BackendDeveloperResponse:
+    def run(self, solution_arch: SolutionArchitectResponse, db_engineer_plan: Optional[DatabaseEngineerResponse] = None, api_design: Optional[APIDesignerResponse] = None) -> BackendDeveloperResponse:
         """
         Run the backend developer agent.
         
         Args:
             solution_arch: The output from the Solution Architect agent.
             db_engineer_plan: Optional database engineer designs.
+            api_design: Optional API Designer specification.
             
         Returns:
             Structured BackendDeveloperResponse.
@@ -44,11 +45,14 @@ class BackendDeveloperAgent:
             AgentExecutionError: If the agent fails.
         """
         # Convert inputs to JSON string (supporting backward compatibility)
-        if db_engineer_plan:
+        if db_engineer_plan or api_design:
             input_data = {
                 "solution_architect": solution_arch.model_dump(),
-                "database_engineer_plan": db_engineer_plan.model_dump()
             }
+            if db_engineer_plan:
+                input_data["database_engineer_plan"] = db_engineer_plan.model_dump()
+            if api_design:
+                input_data["api_design"] = api_design.model_dump()
             input_str = json.dumps(input_data, indent=2)
         else:
             input_str = solution_arch.model_dump_json(indent=2)

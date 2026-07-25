@@ -21,10 +21,14 @@ const AGENT_ORDER = [
   "product_owner",
   "solution_architect",
   "database_engineer",
+  "api_designer",
   "backend_developer",
+  "security_engineer",
+  "qa_engineer",
   "frontend_developer",
   "code_reviewer",
-  "doc_writer",
+  "documentation_writer",
+  "devops_engineer",
 ];
 
 const AGENT_META: Record<string, { label: string; icon: string; desc: string }> = {
@@ -53,10 +57,25 @@ const AGENT_META: Record<string, { label: string; icon: string; desc: string }> 
     icon: "🗄️",
     desc: "Builds indexes, relationships cardinality, migration DDLs, normalizes schema, and formats SQLAlchemy code.",
   },
+  api_designer: {
+    label: "API Designer",
+    icon: "🔌",
+    desc: "Designs OpenAPI spec, REST endpoints, request/response models, error models, auth flow, and versioning.",
+  },
   backend_developer: {
     label: "Backend Developer",
     icon: "💻",
     desc: "Generates SQLAlchemy models, schemas, and routes in clean FastAPI code.",
+  },
+  security_engineer: {
+    label: "Security Engineer",
+    icon: "🔐",
+    desc: "Audits generated code for OWASP Top 10, JWT flaws, injection, secrets, and auth vulnerabilities.",
+  },
+  qa_engineer: {
+    label: "QA Engineer",
+    icon: "🧪",
+    desc: "Generates test plan, unit tests, integration tests, API tests, edge cases, and simulates test coverage.",
   },
   frontend_developer: {
     label: "Frontend Developer",
@@ -68,10 +87,15 @@ const AGENT_META: Record<string, { label: string; icon: string; desc: string }> 
     icon: "🛡️",
     desc: "Checks code for security risks (SQL injection, auth checks) and applies styling fixes.",
   },
-  doc_writer: {
+  documentation_writer: {
     label: "Doc Writer",
     icon: "📝",
     desc: "Generates installation setup instructions, and a detailed endpoint summary in a README.",
+  },
+  devops_engineer: {
+    label: "DevOps Engineer",
+    icon: "🐳",
+    desc: "Generates Dockerfile, Docker Compose, Nginx reverse proxy configurations, CI/CD YAML, and production setup guides.",
   },
 };
 
@@ -87,7 +111,7 @@ export default function ProjectStatusPage() {
   const [activeFixedFile, setActiveFixedFile] = useState<string>("");
   const [logs, setLogs] = useState<string[]>([]);
 
-  const isAllDone = runs.length === 9 && runs.every((r) => r.status === "completed");
+  const isAllDone = runs.length === 13 && runs.every((r) => r.status === "completed");
   const anyFailed = runs.some((r) => r.status === "failed");
 
   // Determine current active agent based on run status
@@ -753,6 +777,404 @@ export default function ProjectStatusPage() {
           </div>
         );
 
+      case "api_designer":
+        return (
+          <div className="space-y-6">
+            {/* OpenAPI Spec */}
+            {data.openapi_spec && (
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">OpenAPI 3.1 Specification</span>
+                <pre className="bg-black/40 rounded-xl p-4 font-mono text-xs text-indigo-200 border border-white/5 overflow-x-auto max-h-60 overflow-y-auto whitespace-pre-wrap">
+                  {data.openapi_spec}
+                </pre>
+              </div>
+            )}
+
+            {/* Endpoints Table */}
+            {data.endpoints?.length > 0 && (
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">REST Endpoints</span>
+                <div className="overflow-x-auto border border-white/5 rounded-xl text-[11px]">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-white/5 border-b border-white/5 text-gray-400">
+                        <th className="px-3 py-2">Method</th>
+                        <th className="px-3 py-2">Path</th>
+                        <th className="px-3 py-2">Summary</th>
+                        <th className="px-3 py-2">Request</th>
+                        <th className="px-3 py-2">Response</th>
+                        <th className="px-3 py-2 text-right">Auth</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-gray-300">
+                      {data.endpoints.map((ep: any, i: number) => (
+                        <tr key={i} className="hover:bg-white/5">
+                          <td className="px-3 py-2">
+                            <span className={`font-mono font-bold text-xs px-1.5 py-0.5 rounded ${
+                              ep.method === "GET" ? "bg-emerald-500/20 text-emerald-400" :
+                              ep.method === "POST" ? "bg-blue-500/20 text-blue-400" :
+                              ep.method === "PUT" || ep.method === "PATCH" ? "bg-amber-500/20 text-amber-400" :
+                              ep.method === "DELETE" ? "bg-red-500/20 text-red-400" :
+                              "bg-gray-500/20 text-gray-400"
+                            }`}>{ep.method}</span>
+                          </td>
+                          <td className="px-3 py-2 font-mono text-indigo-300">{ep.path}</td>
+                          <td className="px-3 py-2">{ep.summary}</td>
+                          <td className="px-3 py-2 font-mono text-xs">{ep.request_model || "—"}</td>
+                          <td className="px-3 py-2 font-mono text-xs">{ep.response_model}</td>
+                          <td className="px-3 py-2 text-right">{ep.auth_required ? "🔒" : "🌐"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Request & Response Models */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Request Models */}
+              {data.request_models?.length > 0 && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Request Models</span>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {data.request_models.map((model: any, i: number) => (
+                      <div key={i} className="bg-black/30 border border-white/5 rounded-xl p-3">
+                        <span className="text-xs font-bold text-white block mb-1">{model.name}</span>
+                        <div className="space-y-0.5">
+                          {model.fields?.map((f: any, j: number) => (
+                            <div key={j} className="flex items-center gap-2 text-[10px]">
+                              <span className="font-mono text-indigo-300">{f.name}</span>
+                              <span className="text-gray-500">:</span>
+                              <span className="font-mono text-amber-300">{f.type}</span>
+                              {f.required && <span className="text-red-400">*</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Response Models */}
+              {data.response_models?.length > 0 && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Response Models</span>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {data.response_models.map((model: any, i: number) => (
+                      <div key={i} className="bg-black/30 border border-white/5 rounded-xl p-3">
+                        <span className="text-xs font-bold text-white block mb-1">{model.name}</span>
+                        <div className="space-y-0.5">
+                          {model.fields?.map((f: any, j: number) => (
+                            <div key={j} className="flex items-center gap-2 text-[10px]">
+                              <span className="font-mono text-indigo-300">{f.name}</span>
+                              <span className="text-gray-500">:</span>
+                              <span className="font-mono text-amber-300">{f.type}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Error Models & Auth Flow */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Error Models */}
+              {data.error_models?.length > 0 && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Error Models</span>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {data.error_models.map((err: any, i: number) => (
+                      <div key={i} className="bg-black/30 border border-white/5 rounded-xl p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-xs font-bold text-red-400">{err.status_code}</span>
+                          <span className="text-xs text-white">{err.error_code}</span>
+                        </div>
+                        <p className="text-[10px] text-gray-400">{err.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Authentication Flow */}
+              {data.authentication_flow && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Authentication Flow</span>
+                  <div className="bg-black/30 border border-white/5 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">Method:</span>
+                      <span className="text-xs font-bold text-white">{data.authentication_flow.method}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">Token Endpoint:</span>
+                      <span className="font-mono text-xs text-indigo-300">{data.authentication_flow.token_endpoint}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">Refresh Endpoint:</span>
+                      <span className="font-mono text-xs text-indigo-300">{data.authentication_flow.refresh_endpoint}</span>
+                    </div>
+                    <p className="text-[10px] text-gray-300 leading-relaxed whitespace-pre-wrap mt-2">{data.authentication_flow.description}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Versioning Strategy */}
+            {data.versioning_strategy && (
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Versioning Strategy</span>
+                <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{data.versioning_strategy}</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case "security_engineer":
+        return (
+          <div className="space-y-6">
+            {/* Overall Risk Banner */}
+            {data.overall_risk && (
+              <div className={`border rounded-2xl p-4 flex items-center gap-4 ${
+                data.overall_risk === "critical" ? "bg-red-500/10 border-red-500/30" :
+                data.overall_risk === "high" ? "bg-orange-500/10 border-orange-500/30" :
+                data.overall_risk === "medium" ? "bg-amber-500/10 border-amber-500/30" :
+                "bg-emerald-500/10 border-emerald-500/30"
+              }`}>
+                <span className={`text-2xl font-black uppercase tracking-widest ${
+                  data.overall_risk === "critical" ? "text-red-400" :
+                  data.overall_risk === "high" ? "text-orange-400" :
+                  data.overall_risk === "medium" ? "text-amber-400" :
+                  "text-emerald-400"
+                }`}>{data.overall_risk.toUpperCase()}</span>
+                <div className="flex gap-4 ml-4 text-xs">
+                  <span className="text-red-400">{data.critical_count} Critical</span>
+                  <span className="text-orange-400">{data.high_count} High</span>
+                  <span className="text-amber-400">{data.medium_count} Medium</span>
+                  <span className="text-gray-400">{data.low_count} Low</span>
+                </div>
+              </div>
+            )}
+
+            {/* Findings Table */}
+            {data.findings?.length > 0 && (
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Security Findings</span>
+                <div className="overflow-x-auto border border-white/5 rounded-xl text-[11px] max-h-72 overflow-y-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="sticky top-0">
+                      <tr className="bg-[#0a0d1e] border-b border-white/5 text-gray-400">
+                        <th className="px-3 py-2">Severity</th>
+                        <th className="px-3 py-2">Category</th>
+                        <th className="px-3 py-2">Title</th>
+                        <th className="px-3 py-2">File</th>
+                        <th className="px-3 py-2">OWASP</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-gray-300">
+                      {data.findings.map((f: any, i: number) => (
+                        <tr key={i} className="hover:bg-white/5">
+                          <td className="px-3 py-2">
+                            <span className={`font-mono font-bold text-xs px-1.5 py-0.5 rounded ${
+                              f.severity === "critical" ? "bg-red-500/20 text-red-400" :
+                              f.severity === "high" ? "bg-orange-500/20 text-orange-400" :
+                              f.severity === "medium" ? "bg-amber-500/20 text-amber-400" :
+                              f.severity === "low" ? "bg-gray-500/20 text-gray-400" :
+                              "bg-blue-500/10 text-blue-400"
+                            }`}>{f.severity}</span>
+                          </td>
+                          <td className="px-3 py-2 font-semibold text-indigo-300">{f.category}</td>
+                          <td className="px-3 py-2">
+                            <div className="font-semibold text-white">{f.title}</div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">{f.description?.slice(0, 100)}{f.description?.length > 100 ? "…" : ""}</div>
+                          </td>
+                          <td className="px-3 py-2 font-mono text-[10px] text-gray-400">{f.file || "—"}{f.line ? `:${f.line}` : ""}</td>
+                          <td className="px-3 py-2 text-[10px] text-indigo-300">{f.owasp_id || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* JWT & Dependency / Secrets */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* JWT Assessment */}
+              {data.jwt_assessment && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">JWT Assessment</span>
+                  <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{data.jwt_assessment}</p>
+                </div>
+              )}
+
+              {/* Secrets Detected */}
+              <div className="space-y-4">
+                {data.secrets_detected?.length > 0 && (
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 space-y-2">
+                    <span className="text-[10px] text-red-400 font-semibold uppercase tracking-wider block">🔑 Secrets Detected</span>
+                    <ul className="space-y-1">
+                      {data.secrets_detected.map((s: string, i: number) => (
+                        <li key={i} className="text-xs font-mono text-red-300">{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {data.dependency_risks?.length > 0 && (
+                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 space-y-2">
+                    <span className="text-[10px] text-orange-400 font-semibold uppercase tracking-wider block">⚠️ Dependency Risks</span>
+                    <ul className="space-y-1">
+                      {data.dependency_risks.map((d: string, i: number) => (
+                        <li key={i} className="text-xs text-orange-300">{d}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* OWASP Coverage & Recommended Patches */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* OWASP Coverage */}
+              {data.owasp_coverage?.length > 0 && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">OWASP Top 10 Coverage</span>
+                  <div className="flex flex-wrap gap-2">
+                    {data.owasp_coverage.map((owasp: string, i: number) => (
+                      <span key={i} className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-mono text-[10px] px-2 py-1 rounded-lg">{owasp}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recommended Patches */}
+              {data.recommended_patches?.length > 0 && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Recommended Patches</span>
+                  <ol className="space-y-2 list-decimal list-inside">
+                    {data.recommended_patches.map((patch: string, i: number) => (
+                      <li key={i} className="text-xs text-gray-300 leading-relaxed">{patch}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case "qa_engineer":
+        return (
+          <div className="space-y-6">
+            {/* Test Plan & Coverage Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Coverage Banner */}
+              {data.estimated_coverage !== undefined && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-4 flex flex-col justify-between md:col-span-1">
+                  <div>
+                    <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Estimated Test Coverage</span>
+                    <span className="text-4xl font-extrabold text-white mt-1 block">{data.estimated_coverage}%</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                      <div className="bg-indigo-500 h-full rounded-full transition-all duration-500" style={{ width: `${data.estimated_coverage}%` }} />
+                    </div>
+                    <span className="text-[10px] text-gray-400 block">{data.coverage_report_summary || "Simulated coverage summary"}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Test Plan */}
+              {data.test_plan && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2 md:col-span-2">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Test Plan Strategy</span>
+                  <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto pr-2">
+                    {data.test_plan}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Test Code Tabs */}
+            <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-4">
+              <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Generated Pytest Suite</span>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Unit Tests */}
+                {data.unit_tests_code && (
+                  <div className="space-y-2">
+                    <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Unit Tests</span>
+                    <pre className="bg-[#0a0d1e] border border-white/5 rounded-xl p-4 font-mono text-[10px] text-gray-300 whitespace-pre overflow-x-auto max-h-64 overflow-y-auto leading-relaxed">
+                      {data.unit_tests_code}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Integration Tests */}
+                {data.integration_tests_code && (
+                  <div className="space-y-2">
+                    <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Integration Tests</span>
+                    <pre className="bg-[#0a0d1e] border border-white/5 rounded-xl p-4 font-mono text-[10px] text-gray-300 whitespace-pre overflow-x-auto max-h-64 overflow-y-auto leading-relaxed">
+                      {data.integration_tests_code}
+                    </pre>
+                  </div>
+                )}
+
+                {/* API Endpoint Tests */}
+                {data.api_tests_code && (
+                  <div className="space-y-2">
+                    <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">API Endpoint Tests</span>
+                    <pre className="bg-[#0a0d1e] border border-white/5 rounded-xl p-4 font-mono text-[10px] text-gray-300 whitespace-pre overflow-x-auto max-h-64 overflow-y-auto leading-relaxed">
+                      {data.api_tests_code}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Edge Cases */}
+            {data.edge_cases?.length > 0 && (
+              <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
+                <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Edge Cases & Failure Modes</span>
+                <div className="overflow-x-auto border border-white/5 rounded-xl text-[11px]">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-white/5 border-b border-white/5 text-gray-400">
+                        <th className="px-3 py-2">Test Name</th>
+                        <th className="px-3 py-2">Type</th>
+                        <th className="px-3 py-2">Description</th>
+                        <th className="px-3 py-2">Mock Input</th>
+                        <th className="px-3 py-2 text-right">Expected Output</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-gray-300">
+                      {data.edge_cases.map((tc: any, i: number) => (
+                        <tr key={i} className="hover:bg-white/5">
+                          <td className="px-3 py-2 font-mono text-indigo-300 font-bold">{tc.name}</td>
+                          <td className="px-3 py-2">
+                            <span className={`font-mono text-[9px] uppercase px-1.5 py-0.5 rounded font-semibold ${
+                              tc.type === "unit" ? "bg-blue-500/20 text-blue-400" :
+                              tc.type === "integration" ? "bg-amber-500/20 text-amber-400" :
+                              tc.type === "api" ? "bg-emerald-500/20 text-emerald-400" :
+                              "bg-red-500/20 text-red-400"
+                            }`}>{tc.type}</span>
+                          </td>
+                          <td className="px-3 py-2 text-gray-400 max-w-xs truncate" title={tc.description}>{tc.description}</td>
+                          <td className="px-3 py-2 font-mono text-[10px] text-gray-300">{tc.input_mock}</td>
+                          <td className="px-3 py-2 font-mono text-[10px] text-indigo-400 text-right">{tc.expected_output}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
       case "backend_developer":
         const currentFileObj = data.files?.find((f: any) => f.path === activeCodeFile);
         return (
@@ -905,7 +1327,7 @@ export default function ProjectStatusPage() {
           </div>
         );
 
-      case "doc_writer":
+      case "documentation_writer":
         return (
           <div className="space-y-4">
             <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Generated Documentation (README.md)</h4>
@@ -913,6 +1335,93 @@ export default function ProjectStatusPage() {
               <pre className="font-mono text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">
                 {data.documentation || "No documentation generated."}
               </pre>
+            </div>
+          </div>
+        );
+
+      case "devops_engineer":
+        return (
+          <div className="space-y-6 text-gray-300">
+            {/* Deployment Guide & Environment variables */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Deployment Guide */}
+              {data.deployment_guide && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2 md:col-span-2">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Deployment Guide</span>
+                  <div className="text-xs leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto pr-2">
+                    {data.deployment_guide}
+                  </div>
+                </div>
+              )}
+
+              {/* Environment Variables */}
+              {data.production_env_vars?.length > 0 && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3 md:col-span-1">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Production Environment Variables</span>
+                  <div className="overflow-y-auto max-h-64 space-y-2 pr-1">
+                    {data.production_env_vars.map((v: any, i: number) => (
+                      <div key={i} className="bg-black/30 border border-white/5 rounded-xl p-2.5 space-y-1">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="font-mono text-indigo-300 font-bold break-all">{v.name}</span>
+                          {v.is_secret && (
+                            <span className="bg-red-500/20 text-red-400 font-semibold text-[8px] px-1 py-0.5 rounded uppercase tracking-wider">Secret</span>
+                          )}
+                        </div>
+                        <p className="text-[9px] text-gray-400">{v.description}</p>
+                        {v.default_value && (
+                          <div className="text-[9px] font-mono text-gray-500 truncate">Default: {v.default_value}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Containerization Configurations */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Dockerfile */}
+              {data.dockerfile && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Dockerfile (Production Multi-Stage Build)</span>
+                  <pre className="bg-[#0a0d1e] border border-white/5 rounded-xl p-4 font-mono text-[10px] text-gray-300 whitespace-pre overflow-x-auto max-h-80 overflow-y-auto leading-relaxed">
+                    {data.dockerfile}
+                  </pre>
+                </div>
+              )}
+
+              {/* Docker Compose */}
+              {data.docker_compose && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">docker-compose.yml</span>
+                  <pre className="bg-[#0a0d1e] border border-white/5 rounded-xl p-4 font-mono text-[10px] text-gray-300 whitespace-pre overflow-x-auto max-h-80 overflow-y-auto leading-relaxed">
+                    {data.docker_compose}
+                  </pre>
+                </div>
+              )}
+            </div>
+
+            {/* CI/CD & Reverse Proxy configs */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* GitHub Actions */}
+              {data.github_actions_workflow && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">GitHub Actions CI/CD (.github/workflows/deploy.yml)</span>
+                  <pre className="bg-[#0a0d1e] border border-white/5 rounded-xl p-4 font-mono text-[10px] text-gray-300 whitespace-pre overflow-x-auto max-h-80 overflow-y-auto leading-relaxed">
+                    {data.github_actions_workflow}
+                  </pre>
+                </div>
+              )}
+
+              {/* Nginx configuration */}
+              {data.nginx_config && (
+                <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                  <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider block">Nginx Configuration (nginx.conf)</span>
+                  <pre className="bg-[#0a0d1e] border border-white/5 rounded-xl p-4 font-mono text-[10px] text-gray-300 whitespace-pre overflow-x-auto max-h-80 overflow-y-auto leading-relaxed">
+                    {data.nginx_config}
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
         );

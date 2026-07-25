@@ -1,0 +1,205 @@
+"""
+Memory subsystem Pydantic schemas.
+
+All public data contracts for requests, responses, and internal
+metadata are defined here.  No circular imports — this module imports
+only from the standard library and Pydantic.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
+
+# ---------------------------------------------------------------------------
+# Enumerations
+# ---------------------------------------------------------------------------
+
+class CollectionName(str, Enum):
+    """Canonical collection identifiers used throughout the memory system."""
+    REQUIREMENTS = "requirements"
+    ARCHITECTURE = "architecture"
+    DATABASE_DESIGN = "database_design"
+    API_CONTRACTS = "api_contracts"
+    BACKEND_CODE = "backend_code"
+    FRONTEND_CODE = "frontend_code"
+    SECURITY_REPORTS = "security_reports"
+    QA_REPORTS = "qa_reports"
+    DOCUMENTATION = "documentation"
+    DEVOPS = "devops"
+    CONVERSATION = "conversation"
+    PROJECT_HISTORY = "project_history"
+
+
+class EmbeddingProviderName(str, Enum):
+    """Supported embedding provider identifiers."""
+    LOCAL = "local"
+    OLLAMA = "ollama"
+    HUGGINGFACE = "huggingface"
+
+
+class MemoryMode(str, Enum):
+    """Deployment mode: drives provider selection defaults."""
+    LOCAL = "local"    # Ollama + ChromaDB
+    CLOUD = "cloud"    # HuggingFace API + ChromaDB
+
+
+# ---------------------------------------------------------------------------
+# Memory metadata
+# ---------------------------------------------------------------------------
+
+class MemoryMetadata(BaseModel):
+    """Flat metadata stored alongside every memory document in ChromaDB."""
+    project_id: int
+    agent_name: str
+    artifact_type: str
+    timestamp: str  # ISO-8601 UTC string — ChromaDB requires scalar values
+    version: int
+
+
+# ---------------------------------------------------------------------------
+# Stored memory record
+# ---------------------------------------------------------------------------
+
+class MemoryRecord(BaseModel):
+    """A single memory entry as returned by retrieval / listing operations."""
+    id: str
+    document: str
+    metadata: MemoryMetadata
+    similarity_score: Optional[float] = None  # populated by semantic search
+
+
+# ---------------------------------------------------------------------------
+# Query request / response
+# ---------------------------------------------------------------------------
+
+class MemoryQuery(BaseModel):
+    """Input schema for a semantic memory search."""
+    query: str = Field(..., min_length=1)
+    limit: int = Field(default=5, ge=1, le=50)
+    threshold: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
+class MemoryQueryResult(BaseModel):
+    """Single hit returned by a semantic search query."""
+    id: str
+    document: str
+    metadata: Dict[str, Any]
+    similarity_score: float
+
+
+# ---------------------------------------------------------------------------
+# Store request
+# ---------------------------------------------------------------------------
+
+class MemoryStoreRequest(BaseModel):
+    """Input schema for storing a new memory artifact."""
+    project_id: int
+    agent_name: str
+    artifact_type: str
+    collection_name: str
+    content: str = Field(..., min_length=1)
+    version: int = Field(default=1, ge=1)
+
+
+# ---------------------------------------------------------------------------
+# Chunk (RAG pipeline)
+# ---------------------------------------------------------------------------
+
+class TextChunk(BaseModel):
+    """A single chunk produced by the text chunker."""
+    chunk_index: int
+    content: str
+    char_start: int
+    char_end: int
+    source_artifact_type: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Context injection
+# ---------------------------------------------------------------------------
+
+class AgentContext(BaseModel):
+    """
+    Assembled context block injected into an agent's system / user prompt.
+
+    ``chunks`` is ordered by descending similarity score; the caller
+    appends this to its prompt string.
+    """
+    project_id: int
+    agent_name: str
+    chunks: List[MemoryQueryResult] = Field(default_factory=list)
+    conversation_history: List[Dict[str, str]] = Field(default_factory=list)
+
+    def to_prompt_block(self) -> str:
+        """
+        Render the context as a markdown-formatted string suitable for
+        direct injection into an LLM prompt.
+        """
+        lines: List[str] = []
+
+        if self.conversation_history:
+            lines.append("### Previous Conversation")
+            for turn in self.conversation_history:
+                role = turn.get("role", "unknown").capitalize()
+                content = turn.get("content", "")
+                lines.append(f"**{role}:** {content}")
+            lines.append("")
+
+        if self.chunks:
+            lines.append("### Relevant Project Memory")
+            for i, chunk in enumerate(self.chunks, 1):
+                score = f"{chunk.similarity_score:.2f}"
+                lines.append(
+                    f"[{i}] (score={score}) {chunk.document}"
+                )
+
+        return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Project history
+# ---------------------------------------------------------------------------
+
+class ProjectHistoryEntry(BaseModel):
+    """A version-tracked snapshot of a project artifact."""
+    id: str
+    project_id: int
+    agent_name: str
+    artifact_type: str
+    collection_name: str
+    version: int
+    content: str
+    timestamp: datetime
+
+    @classmethod
+    def from_memory_record(cls, record: MemoryRecord) -> "ProjectHistoryEntry":
+        meta = record.metadata
+        return cls(
+            id=record.id,
+            project_id=meta.project_id,
+            agent_name=meta.agent_name,
+            artifact_type=meta.artifact_type,
+            collection_name="project_history",
+            version=meta.version,
+            content=record.document,
+            timestamp=datetime.fromisoformat(meta.timestamp),
+        )
+
+
+# ---------------------------------------------------------------------------
+# Provider health status
+# ---------------------------------------------------------------------------
+
+class ProviderHealth(BaseModel):
+    """Health status of an embedding provider."""
+    provider_name: str
+    healthy: bool
+    dimension: Optional[int] = None
+    error: Optional[str] = None
+    checked_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )

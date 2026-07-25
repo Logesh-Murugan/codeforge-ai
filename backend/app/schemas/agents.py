@@ -120,6 +120,111 @@ class DatabaseEngineerResponse(BaseModel):
     sqlalchemy_models_code: str
 
 
+
+class SecurityFinding(BaseModel):
+    category: str          # e.g. "JWT", "OWASP:A01", "Injection", "Auth", "Secrets", "Dependencies"
+    owasp_id: Optional[str]  # e.g. "A01:2021", "A03:2021" — null if not directly mapped
+    severity: str          # "critical" | "high" | "medium" | "low" | "info"
+    file: Optional[str]    # affected file path if applicable
+    line: Optional[int]    # affected line number if known
+    title: str
+    description: str
+    recommendation: str
+    code_snippet: Optional[str]  # offending code snippet if applicable
+
+
+class SecurityEngineerResponse(BaseModel):
+    overall_risk: str                    # "critical" | "high" | "medium" | "low"
+    findings: List[SecurityFinding]
+    critical_count: int
+    high_count: int
+    medium_count: int
+    low_count: int
+    jwt_assessment: str
+    dependency_risks: List[str]
+    secrets_detected: List[str]
+    owasp_coverage: List[str]            # OWASP IDs checked
+    recommended_patches: List[str]       # ordered list of patch instructions
+
+
+class TestCase(BaseModel):
+    name: str
+    type: str                  # "unit" | "integration" | "api" | "edge_case"
+    description: str
+    input_mock: str
+    expected_output: str
+
+
+class QAEngineerResponse(BaseModel):
+    test_plan: str
+    unit_tests_code: str
+    integration_tests_code: str
+    api_tests_code: str
+    edge_cases: List[TestCase]
+    coverage_report_summary: str
+    estimated_coverage: float
+
+
+class EnvVarConfig(BaseModel):
+    name: str
+    description: str
+    default_value: Optional[str] = None
+    is_secret: bool
+
+
+class DevOpsEngineerResponse(BaseModel):
+    dockerfile: str
+    docker_compose: str
+    github_actions_workflow: str
+    nginx_config: str
+    production_env_vars: List[EnvVarConfig]
+    deployment_guide: str
+
+
+class APIEndpoint(BaseModel):
+    path: str
+    method: str
+    summary: str
+    request_model: Optional[str]
+    response_model: Optional[str] = None
+    error_responses: List[str]
+    auth_required: bool
+
+
+class APIRequestModel(BaseModel):
+    name: str
+    fields: List[dict]
+
+
+class APIResponseModel(BaseModel):
+    name: str
+    fields: List[dict]
+
+
+class APIErrorModel(BaseModel):
+    status_code: int
+    error_code: str
+    description: str
+    example_response: str
+
+
+class AuthenticationFlow(BaseModel):
+    method: str
+    token_endpoint: str
+    refresh_endpoint: str
+    description: str
+
+
+class APIDesignerResponse(BaseModel):
+    openapi_spec: str
+    endpoints: List[APIEndpoint]
+    request_models: List[APIRequestModel]
+    response_models: List[APIResponseModel]
+    error_models: List[APIErrorModel]
+    authentication_flow: AuthenticationFlow
+    versioning_strategy: str
+
+
 class GeneratedFile(BaseModel):
     path: str
     content: str

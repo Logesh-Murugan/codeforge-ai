@@ -16,3 +16,14 @@ langchain-core>=0.3.0
 psycopg2-binary==2.9.10
 email-validator==2.2.0
 bcrypt==4.0.1
+
+# ── Memory subsystem ──────────────────────────────────────────────────────────
+# Vector store (local ChromaDB — no cloud dependency)
+chromadb>=0.5.0
+
+# Note: the following are OPTIONAL — only install what your deployment needs.
+# For Ollama embeddings: no extra package needed (httpx already present above).
+# For HuggingFace Inference API embeddings: no extra package needed (httpx).
+# For local sentence-transformers (offline HF, GPU/CPU):
+#   sentence-transformers>=2.7.0
+#   torch>=2.0.0

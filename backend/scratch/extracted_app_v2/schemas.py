@@ -2,26 +2,21 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
-
 class UserCreate(BaseModel):
-    username: str
     email: str
+    username: str
     password: str
-
 
 class User(BaseModel):
     id: int
-    username: str
     email: str
+    username: str
     created_at: datetime
-
     class Config:
         orm_mode = True
 
-
 class NoteCreate(BaseModel):
     content: str
-
 
 class Note(BaseModel):
     id: int
@@ -29,6 +24,5 @@ class Note(BaseModel):
     author_id: int
     created_at: datetime
     updated_at: datetime
-
     class Config:
         orm_mode = True

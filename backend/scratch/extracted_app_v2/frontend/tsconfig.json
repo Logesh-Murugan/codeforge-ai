@@ -14,6 +14,6 @@
     "outDir": "build",
     "jsx": "preserve"
   },
-  "include": ["next-env.d.ts", "pages/**/*", "components/**/*", "lib/**/*"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
 }
