@@ -18,6 +18,38 @@ from pydantic import BaseModel, Field
 # Enumerations
 # ---------------------------------------------------------------------------
 
+class ArtifactType(str, Enum):
+    """
+    Canonical artifact type identifiers for project memory records.
+
+    These map to the functional categories produced by each agent in the
+    CodeForge AI pipeline.
+    """
+    # Requirement phase
+    REQUIREMENTS        = "requirements"
+    # Architecture phase
+    ARCHITECTURE        = "architecture"
+    DATABASE_DESIGN     = "database_design"
+    API_CONTRACTS       = "api_contracts"
+    # Code generation
+    BACKEND_CODE        = "backend_code"
+    FRONTEND_CODE       = "frontend_code"
+    # Assurance & ops
+    SECURITY_REPORT     = "security_report"
+    QA_REPORT           = "qa_report"
+    DOCUMENTATION       = "documentation"
+    DEVOPS              = "devops"
+    # Meta
+    CONVERSATION        = "conversation"
+    PROJECT_HISTORY     = "project_history"
+    # Generated file record (3.4)
+    GENERATED_FILE      = "generated_file"
+    # Agent memory (3.4)
+    AGENT_OUTPUT        = "agent_output"
+    # Revision (3.4)
+    REVISION            = "revision"
+
+
 class CollectionName(str, Enum):
     """Canonical collection identifiers used throughout the memory system."""
     REQUIREMENTS = "requirements"
@@ -203,3 +235,126 @@ class ProviderHealth(BaseModel):
     checked_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 3.4 — Project Memory schemas
+# ---------------------------------------------------------------------------
+
+class AgentMemoryRecord(BaseModel):
+    """
+    A versioned output record produced by one agent for one project.
+
+    Stored in the agent's canonical collection *and* mirrored into
+    ``project_history`` by ``ProjectMemoryService``.
+    """
+    id: str
+    project_id: int
+    agent_name: str
+    artifact_type: str
+    collection_name: str
+    content: str
+    version: int
+    timestamp: datetime
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GeneratedFileRecord(BaseModel):
+    """
+    Represents a single file that was generated for a project.
+
+    ``file_path`` is relative to the project root (e.g. ``backend/main.py``).
+    ``language`` is a hint for syntax highlighting / processing.
+    """
+    id: str
+    project_id: int
+    file_path: str
+    language: str
+    content: str
+    agent_name: str
+    version: int
+    timestamp: datetime
+
+
+class RevisionEntry(BaseModel):
+    """
+    A tracked revision of any project artifact.
+
+    A revision differs from a version in that it records *why* the change
+    was made (``reason``) and who requested it (``requested_by``).
+    """
+    id: str
+    project_id: int
+    artifact_type: str
+    version: int
+    content: str
+    reason: str = ""
+    requested_by: str = "system"
+    timestamp: datetime
+
+
+class ProjectSnapshot(BaseModel):
+    """
+    A full point-in-time snapshot of everything recorded for a project.
+
+    Returned by ``ProjectMemoryService.get_project_snapshot()``.
+    """
+    project_id: int
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    requirements: List[AgentMemoryRecord] = Field(default_factory=list)
+    architecture: List[AgentMemoryRecord] = Field(default_factory=list)
+    generated_files: List[GeneratedFileRecord] = Field(default_factory=list)
+    agent_outputs: List[AgentMemoryRecord] = Field(default_factory=list)
+    revisions: List[RevisionEntry] = Field(default_factory=list)
+    version_history: List["ProjectHistoryEntry"] = Field(default_factory=list)
+
+    @property
+    def total_artifacts(self) -> int:
+        return (
+            len(self.requirements)
+            + len(self.architecture)
+            + len(self.generated_files)
+            + len(self.agent_outputs)
+        )
+
+
+# ---------------------------------------------------------------------------
+# Phase 3.4 — Store/Query request schemas for the memory API
+# ---------------------------------------------------------------------------
+
+class StoreArtifactRequest(BaseModel):
+    """Request body for POST /projects/{id}/memory/artifacts."""
+    agent_name: str = Field(..., min_length=1)
+    artifact_type: str = Field(..., min_length=1)
+    collection_name: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1)
+    version: int = Field(default=1, ge=1)
+    file_path: Optional[str] = None
+    language: Optional[str] = None
+
+
+class StoreRevisionRequest(BaseModel):
+    """Request body for POST /projects/{id}/memory/revisions."""
+    artifact_type: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1)
+    version: int = Field(default=1, ge=1)
+    reason: str = Field(default="")
+    requested_by: str = Field(default="system")
+
+
+class VersionHistoryQuery(BaseModel):
+    """Query parameters for GET /projects/{id}/memory/versions."""
+    artifact_type: Optional[str] = None
+    limit: int = Field(default=20, ge=1, le=100)
+
+
+class MemorySearchRequest(BaseModel):
+    """Request body for POST /projects/{id}/memory/search."""
+    query: str = Field(..., min_length=1)
+    collections: Optional[List[str]] = None
+    limit: int = Field(default=5, ge=1, le=50)
+    threshold: float = Field(default=0.0, ge=0.0, le=1.0)
+
+

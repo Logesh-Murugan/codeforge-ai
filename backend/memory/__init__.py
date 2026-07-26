@@ -66,6 +66,7 @@ from memory.interfaces import (
 )
 from memory.schemas import (
     AgentContext,
+    ArtifactType,
     CollectionName,
     EmbeddingProviderName,
     MemoryMetadata,
@@ -77,6 +78,26 @@ from memory.schemas import (
     ProjectHistoryEntry,
     ProviderHealth,
     TextChunk,
+    # Phase 3.4
+    AgentMemoryRecord,
+    GeneratedFileRecord,
+    RevisionEntry,
+    ProjectSnapshot,
+    StoreArtifactRequest,
+    StoreRevisionRequest,
+    VersionHistoryQuery,
+    MemorySearchRequest,
+)
+from memory.project_memory import ProjectMemoryService
+from memory.cache import MemoryCache
+from memory.performance import PerformanceMonitor
+from memory.context import (
+    ContextInjector,
+    AgentRole,
+    AGENT_ROLES,
+    CrossAgentMemory,
+    LongTermMemory,
+    ConversationMemory,
 )
 from memory.embeddings import (
     LocalEmbeddings,
@@ -119,8 +140,9 @@ __all__ = [
     "EmbeddingProviderInterface",
     "MemoryProviderInterface",
     "VectorStoreInterface",
-    # Schemas
+    # Schemas (core)
     "AgentContext",
+    "ArtifactType",
     "CollectionName",
     "EmbeddingProviderName",
     "MemoryMetadata",
@@ -132,6 +154,15 @@ __all__ = [
     "ProjectHistoryEntry",
     "ProviderHealth",
     "TextChunk",
+    # Schemas (Phase 3.4)
+    "AgentMemoryRecord",
+    "GeneratedFileRecord",
+    "RevisionEntry",
+    "ProjectSnapshot",
+    "StoreArtifactRequest",
+    "StoreRevisionRequest",
+    "VersionHistoryQuery",
+    "MemorySearchRequest",
     # Embedding providers
     "LocalEmbeddings",
     "OllamaEmbeddings",
@@ -150,4 +181,16 @@ __all__ = [
     "MemoryManager",
     "default_manager",
     "get_service",
+    # Phase 3.4
+    "ProjectMemoryService",
+    # Phase 3.5 — Agent Context Sharing
+    "ContextInjector",
+    "AgentRole",
+    "AGENT_ROLES",
+    "CrossAgentMemory",
+    "LongTermMemory",
+    "ConversationMemory",
+    # Phase 3.6 — Production Hardening
+    "MemoryCache",
+    "PerformanceMonitor",
 ]
