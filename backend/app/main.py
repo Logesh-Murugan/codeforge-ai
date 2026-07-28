@@ -2,8 +2,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import auth, projects, memory
+from app.api.export import router as export_router
+from app.api.validate import router as validate_router
+from app.api.testing import router as testing_router
 
-app = FastAPI(title="CodeForge AI Backend")
+app = FastAPI(
+    title="CodeForge AI Backend",
+    description=(
+        "Autonomous Software Engineering Platform. "
+        "Phase 1–4: Project generation, validation, testing, and export."
+    ),
+    version="4.0.0",
+)
 
 import os
 
@@ -23,6 +33,10 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(memory.router)
+# Phase 4 routers
+app.include_router(export_router)
+app.include_router(validate_router)
+app.include_router(testing_router)
 
 
 @app.get("/")
