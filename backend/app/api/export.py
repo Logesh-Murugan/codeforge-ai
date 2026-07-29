@@ -14,15 +14,15 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response, StreamingResponse
 from io import BytesIO
 
 from app.api.auth import get_current_user
+from app.db import AsyncSessionLocal
 from export_engine.schemas import (
     ExportResult,
     ProjectBundle,
-    ProjectMetadata,
     ReportType,
 )
 from export_engine.services.export_service import ExportService
@@ -93,16 +93,11 @@ async def _load_bundle(project_id: int, session, current_user) -> ProjectBundle:
 )
 async def download_full_zip(
     project_id: int,
-    _user=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Returns a ZIP containing source code and all 12 professional reports."""
-    from app.db import get_session
-    from sqlalchemy.ext.asyncio import AsyncSession
-
-    # Manual session since we're not using Depends in a non-route context
-    from app.db import AsyncSessionLocal
     async with AsyncSessionLocal() as session:
-        bundle = await _load_bundle(project_id, session, _user)
+        bundle = await _load_bundle(project_id, session, current_user)
 
     svc = ExportService()
     zip_bytes = svc.export_zip(bundle)
@@ -123,12 +118,11 @@ async def download_full_zip(
 )
 async def download_source_zip(
     project_id: int,
-    _user=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Returns a ZIP containing only generated source code files."""
-    from app.db import AsyncSessionLocal
     async with AsyncSessionLocal() as session:
-        bundle = await _load_bundle(project_id, session, _user)
+        bundle = await _load_bundle(project_id, session, current_user)
 
     svc = ExportService()
     zip_bytes = svc.export_source_zip(bundle)
@@ -149,12 +143,11 @@ async def download_source_zip(
 )
 async def download_reports_zip(
     project_id: int,
-    _user=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Returns a ZIP containing all 12 Markdown reports."""
-    from app.db import AsyncSessionLocal
     async with AsyncSessionLocal() as session:
-        bundle = await _load_bundle(project_id, session, _user)
+        bundle = await _load_bundle(project_id, session, current_user)
 
     svc = ExportService()
     zip_bytes = svc.export_reports_zip(bundle)
@@ -176,14 +169,13 @@ async def download_reports_zip(
 async def download_single_report(
     project_id: int,
     report_type: ReportType,
-    _user=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Returns a single Markdown report file."""
-    from app.db import AsyncSessionLocal
-    from export_engine.services.report_service import ReportService
-
     async with AsyncSessionLocal() as session:
-        bundle = await _load_bundle(project_id, session, _user)
+        bundle = await _load_bundle(project_id, session, current_user)
+
+    from export_engine.services.report_service import ReportService
 
     rs = ReportService()
     reports = rs.generate(bundle, [report_type])
@@ -207,12 +199,11 @@ async def download_single_report(
 )
 async def get_export_summary(
     project_id: int,
-    _user=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Returns a summary of what would be exported for this project."""
-    from app.db import AsyncSessionLocal
     async with AsyncSessionLocal() as session:
-        bundle = await _load_bundle(project_id, session, _user)
+        bundle = await _load_bundle(project_id, session, current_user)
 
     svc = ExportService()
     # Small zip just for size estimate
