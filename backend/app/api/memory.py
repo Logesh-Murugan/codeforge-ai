@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
-from app.api.auth import get_current_user
+from app.core.security import get_current_user
 from memory.project_memory import ProjectMemoryService
 from memory.schemas import (
     GeneratedFileRecord,

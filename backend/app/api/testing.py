@@ -15,7 +15,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.api.auth import get_current_user
+from app.core.security import get_current_user
 from testing_engine.schemas import TestingReport
 from testing_engine.engine import TestingEngine
 

@@ -15,7 +15,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.api.auth import get_current_user
+from app.core.security import get_current_user
 from validation_engine.schemas import ValidationReport, ValidationRequest
 from validation_engine.engine import ValidationEngine
 

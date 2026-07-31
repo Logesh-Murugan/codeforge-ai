@@ -10,14 +10,15 @@ from memory.routers.memory_engine import router as mengine_router
 from rag.routers.indexing import router as rag_index_router
 from rag.routers.retrieval import router as rag_retrieval_router
 from approval.router import router as approval_router
+from collaboration.routers.collaboration import router as collaboration_router
 
 app = FastAPI(
     title="CodeForge AI Backend",
     description=(
         "Autonomous Software Engineering Platform. "
-        "Phase 1–5: Project generation, validation, testing, export, memory, RAG, and human approval."
+        "Phase 1–5: Project generation, validation, testing, export, memory, RAG, approval, and collaboration engine."
     ),
-    version="5.3.0",
+    version="5.4.0",
 )
 
 import os
@@ -50,6 +51,8 @@ app.include_router(rag_index_router)
 app.include_router(rag_retrieval_router)
 # Phase 5.3 — Human Approval Workflow router
 app.include_router(approval_router)
+# Phase 5.4 — Agent Collaboration Engine router
+app.include_router(collaboration_router)
 
 
 @app.get("/")
