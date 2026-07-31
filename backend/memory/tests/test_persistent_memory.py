@@ -8,6 +8,7 @@ Router tests  — TestClient with mocked service dependency.
 from __future__ import annotations
 
 import pytest
+import pytest_asyncio
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -430,7 +431,7 @@ class TestPersistentMemoryRouter:
 class TestPersistentMemoryIntegration:
     """Real DB tests using SQLite. Requires aiosqlite."""
 
-    @pytest.fixture(autouse=True)
+    @pytest_asyncio.fixture(autouse=True)
     async def setup_db(self):
         from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
         from app.db import Base

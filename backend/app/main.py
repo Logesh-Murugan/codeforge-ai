@@ -6,6 +6,7 @@ from app.api.export import router as export_router
 from app.api.validate import router as validate_router
 from app.api.testing import router as testing_router
 from memory.routers.persistent_memory import router as pmemory_router
+from memory.routers.memory_engine import router as mengine_router
 
 app = FastAPI(
     title="CodeForge AI Backend",
@@ -38,8 +39,9 @@ app.include_router(memory.router)
 app.include_router(export_router)
 app.include_router(validate_router)
 app.include_router(testing_router)
-# Phase 5.1 router
+# Phase 5.1 routers
 app.include_router(pmemory_router)
+app.include_router(mengine_router)
 
 
 @app.get("/")
