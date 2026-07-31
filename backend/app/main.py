@@ -11,14 +11,15 @@ from rag.routers.indexing import router as rag_index_router
 from rag.routers.retrieval import router as rag_retrieval_router
 from approval.router import router as approval_router
 from collaboration.routers.collaboration import router as collaboration_router
+from context_engine.routers.context_router import router as context_router
 
 app = FastAPI(
     title="CodeForge AI Backend",
     description=(
         "Autonomous Software Engineering Platform. "
-        "Phase 1–5: Project generation, validation, testing, export, memory, RAG, approval, and collaboration engine."
+        "Phase 1–5: Project generation, validation, testing, export, memory, RAG, approval, collaboration, and context sharing engine."
     ),
-    version="5.4.0",
+    version="5.5.0",
 )
 
 import os
@@ -53,6 +54,8 @@ app.include_router(rag_retrieval_router)
 app.include_router(approval_router)
 # Phase 5.4 — Agent Collaboration Engine router
 app.include_router(collaboration_router)
+# Phase 5.5 — Context Sharing Engine router
+app.include_router(context_router)
 
 
 @app.get("/")
