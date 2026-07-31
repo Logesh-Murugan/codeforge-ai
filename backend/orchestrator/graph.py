@@ -59,10 +59,38 @@ memory = MemorySaver()
 app = graph.compile(checkpointer=memory)
 
 
-async def run_pipeline(project_id: int, project_idea: str):
+async def run_pipeline(project_id: int, project_idea: str, approval_mode: bool = False):
     """Run the modular agent pipeline under a thread checkpoint config."""
-    initial_state = get_initial_state(project_id, project_idea)
+    initial_state = get_initial_state(project_id, project_idea, approval_mode=approval_mode)
     config = {"configurable": {"thread_id": f"project_{project_id}"}}
     
     async for state in app.astream(initial_state, config):
         pass
+
+
+def get_pipeline_state(project_id: int) -> AgentState | None:
+    """Retrieve current checkpoint state for a project."""
+    config = {"configurable": {"thread_id": f"project_{project_id}"}}
+    state_snapshot = app.get_state(config)
+    if state_snapshot and state_snapshot.values:
+        return state_snapshot.values
+    return None
+
+
+async def resume_pipeline(project_id: int):
+    """Resume execution of a paused pipeline for a project."""
+    config = {"configurable": {"thread_id": f"project_{project_id}"}}
+    current_values = get_pipeline_state(project_id)
+    if not current_values:
+        raise ValueError(f"No checkpointed state found for project {project_id}")
+    
+    # Resume streaming from current snapshot
+    async for state in app.astream(None, config):
+        pass
+
+
+def update_graph_state(project_id: int, state_update: dict):
+    """Update checkpoint state values for a given project thread."""
+    config = {"configurable": {"thread_id": f"project_{project_id}"}}
+    app.update_state(config, state_update)
+

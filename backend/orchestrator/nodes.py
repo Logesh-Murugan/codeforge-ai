@@ -142,8 +142,21 @@ async def execute_node_with_retry_and_recovery(
             # Retrieve output_json for DB persistence from the updated state
             output_json = updated_state.get(agent_name)
             
-            # If successfully completed, update AgentRun
-            await update_agent_run(agent_run.id, "completed", output_json=output_json)
+            # Check approval mode configuration
+            if updated_state.get("approval_mode"):
+                updated_state["approval_status"] = "pending"
+                updated_state["pending_approval"] = {
+                    "agent_name": agent_name,
+                    "agent_run_id": agent_run.id,
+                    "project_id": project_id,
+                    "next_agent": next_agent,
+                    "output": output_json
+                }
+                await update_agent_run(agent_run.id, "waiting_approval", output_json=output_json)
+            else:
+                await update_agent_run(agent_run.id, "completed", output_json=output_json)
+                updated_state["approval_status"] = None
+                updated_state["pending_approval"] = None
             
             # Set current_agent to transition to the next step
             updated_state["current_agent"] = next_agent

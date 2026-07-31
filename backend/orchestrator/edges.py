@@ -10,6 +10,12 @@ def should_continue(state: AgentState) -> str:
     if state.get("error"):
         return END
 
+    if state.get("approval_status") == "rejected":
+        return END
+
+    if state.get("approval_mode") and state.get("approval_status") == "pending":
+        return END
+
     current = state.get("current_agent")
     if not current:
         return END

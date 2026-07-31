@@ -19,9 +19,13 @@ class AgentState(TypedDict):
     devops_engineer: dict | None
     current_agent: str | None
     error: str | None
+    approval_mode: bool | None
+    approval_status: str | None
+    pending_approval: dict | None
+    approval_history: list | None
 
 
-def get_initial_state(project_id: int, project_idea: str) -> AgentState:
+def get_initial_state(project_id: int, project_idea: str, approval_mode: bool = False) -> AgentState:
     """Helper to return a fresh default AgentState dictionary with canonical keys."""
     return {
         "project_id": project_id,
@@ -40,5 +44,9 @@ def get_initial_state(project_id: int, project_idea: str) -> AgentState:
         "documentation_writer": None,
         "devops_engineer": None,
         "current_agent": None,
-        "error": None
+        "error": None,
+        "approval_mode": approval_mode,
+        "approval_status": None,
+        "pending_approval": None,
+        "approval_history": []
     }
