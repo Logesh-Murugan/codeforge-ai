@@ -7,14 +7,17 @@ from app.api.validate import router as validate_router
 from app.api.testing import router as testing_router
 from memory.routers.persistent_memory import router as pmemory_router
 from memory.routers.memory_engine import router as mengine_router
+from rag.routers.indexing import router as rag_index_router
+from rag.routers.retrieval import router as rag_retrieval_router
+from approval.router import router as approval_router
 
 app = FastAPI(
     title="CodeForge AI Backend",
     description=(
         "Autonomous Software Engineering Platform. "
-        "Phase 1–4: Project generation, validation, testing, and export."
+        "Phase 1–5: Project generation, validation, testing, export, memory, RAG, and human approval."
     ),
-    version="4.0.0",
+    version="5.3.0",
 )
 
 import os
@@ -42,6 +45,11 @@ app.include_router(testing_router)
 # Phase 5.1 routers
 app.include_router(pmemory_router)
 app.include_router(mengine_router)
+# Phase 5.2 — RAG Engine routers
+app.include_router(rag_index_router)
+app.include_router(rag_retrieval_router)
+# Phase 5.3 — Human Approval Workflow router
+app.include_router(approval_router)
 
 
 @app.get("/")
