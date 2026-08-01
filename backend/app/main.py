@@ -15,14 +15,15 @@ from context_engine.routers.context_router import router as context_router
 from ai_mode_manager.api.ai_mode_router import router as ai_mode_router
 from monitoring.api.monitoring_router import router as monitoring_router
 from monitoring.api.monitoring_router import websocket_monitoring_endpoint
+from validation_pipeline.api.validation_router import router as validation_router
 
 app = FastAPI(
     title="CodeForge AI Backend",
     description=(
         "Autonomous Software Engineering Platform. "
-        "Phase 1–5: Project generation, validation, testing, export, memory, RAG, approval, collaboration, context sharing, AI mode manager, and real-time monitoring system."
+        "Phase 1–5: Project generation, validation, testing, export, memory, RAG, approval, collaboration, context sharing, AI mode manager, real-time monitoring system, and validation pipeline quality gate."
     ),
-    version="5.7.0",
+    version="5.8.0",
 )
 
 import os
@@ -64,6 +65,8 @@ app.include_router(ai_mode_router)
 # Phase 5.7 — Real-Time Monitoring System router
 app.include_router(monitoring_router)
 app.add_api_websocket_route("/ws/monitoring", websocket_monitoring_endpoint)
+# Phase 5.8 — Validation Pipeline System router
+app.include_router(validation_router)
 
 
 @app.get("/")
