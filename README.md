@@ -46,29 +46,29 @@ CodeForge AI provides a complete end-to-end software development lifecycle (SDLC
 ```mermaid
 flowchart TD
     subgraph Frontend["Frontend Layer (Next.js 14 / Tailwind CSS)"]
-        UI[Dashboard & Studio Pages]
-        MON_UI[Real-Time Monitoring Dashboard]
-        VAL_UI[Validation Quality Gate Dashboard]
-        TIM_UI[Project Timeline & Milestones]
-        PORT_UI[Portfolio & Diagram Center]
+        UI["Dashboard & Studio Pages"]
+        MON_UI["Real-Time Monitoring Dashboard"]
+        VAL_UI["Validation Quality Gate Dashboard"]
+        TIM_UI["Project Timeline & Milestones"]
+        PORT_UI["Portfolio & Diagram Center"]
     end
 
     subgraph Backend["Backend API Layer (FastAPI / Python 3.11)"]
-        API[FastAPI Router Engine]
-        AUTH[JWT Auth & RBAC Security]
-        CORR[Correlation Middleware]
-        HLTH[Health & Diagnostic Probes]
+        API["FastAPI Router Engine"]
+        AUTH["JWT Auth & RBAC Security"]
+        CORR["Correlation Middleware"]
+        HLTH["Health & Diagnostic Probes"]
     end
 
     subgraph CoreEngine["Autonomous Core Subsystems"]
-        ORCH[13-Agent LangGraph Orchestrator]
-        RAG[Hybrid RAG & ChromaDB Engine]
-        MEM[Tiered Memory Manager]
-        MODE[AI Mode Manager (LOCAL/CLOUD)]
-        BUS[EventBus & Telemetry Collector]
-        VAL[12-Stage Validation Quality Gate]
-        TIM[Timeline Repository & Engine]
-        PORT[Portfolio & Mermaid Diagram Service]
+        ORCH["13-Agent LangGraph Orchestrator"]
+        RAG["Hybrid RAG & ChromaDB Engine"]
+        MEM["Tiered Memory Manager"]
+        MODE["AI Mode Manager (LOCAL / CLOUD)"]
+        BUS["EventBus & Telemetry Collector"]
+        VAL["12-Stage Validation Quality Gate"]
+        TIM["Timeline Repository & Engine"]
+        PORT["Portfolio & Mermaid Diagram Service"]
     end
 
     UI --> API
