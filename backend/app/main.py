@@ -18,14 +18,16 @@ from monitoring.api.monitoring_router import websocket_monitoring_endpoint
 from validation_pipeline.api.validation_router import router as validation_router
 from timeline.api.timeline_router import router as timeline_router
 from portfolio.api.portfolio_router import router as portfolio_router
+from app.api.health import router as health_router
+from app.middleware.correlation_middleware import CorrelationMiddleware
 
 app = FastAPI(
     title="CodeForge AI Backend",
     description=(
-        "Autonomous Software Engineering Platform. "
-        "Phase 1–5: Project generation, validation, testing, export, memory, RAG, approval, collaboration, context sharing, AI mode manager, real-time monitoring system, validation pipeline, project timeline engine, and portfolio output package."
+        "Autonomous Software Engineering Platform v2.0.0. "
+        "Complete 14-Phase Autonomous Engineering Suite featuring 13 AI Agents, Hybrid RAG, Memory Manager, Context Sharing, AI Mode Manager, Real-Time Monitoring, 12-Stage Validation Quality Gate, Project Timeline System, and Portfolio Output Package."
     ),
-    version="5.10.0",
+    version="2.0.0",
 )
 
 import os
@@ -35,6 +37,7 @@ allow_origins = [allowed_origin]
 if allowed_origin != "http://localhost:3000":
     allow_origins.extend(["http://localhost:3000", "http://127.0.0.1:3000"])
 
+app.add_middleware(CorrelationMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
@@ -43,6 +46,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(health_router)
 app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(memory.router)
