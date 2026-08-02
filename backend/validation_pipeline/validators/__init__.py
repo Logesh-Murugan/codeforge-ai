@@ -4,10 +4,14 @@ Validators Package — Phase 5.8
 from validation_pipeline.validators.base_validator import BaseValidator
 from validation_pipeline.validators.structure_validator import StructureValidator
 from validation_pipeline.validators.syntax_validator import SyntaxValidator
+from validation_pipeline.validators.python_validator import PythonValidator
+from validation_pipeline.validators.fastapi_validator import FastApiValidator
 from validation_pipeline.validators.dependency_validator import DependencyValidator
 from validation_pipeline.validators.architecture_validator import ArchitectureValidator
 from validation_pipeline.validators.database_validator import DatabaseValidator
+from validation_pipeline.validators.auth_validator import AuthValidator
 from validation_pipeline.validators.api_validator import ApiValidator
+from validation_pipeline.validators.frontend_validator import FrontendValidator
 from validation_pipeline.validators.security_validator import SecurityValidator
 from validation_pipeline.validators.documentation_validator import DocumentationValidator
 from validation_pipeline.validators.docker_validator import DockerValidator
@@ -19,10 +23,14 @@ __all__ = [
     "BaseValidator",
     "StructureValidator",
     "SyntaxValidator",
+    "PythonValidator",
+    "FastApiValidator",
     "DependencyValidator",
     "ArchitectureValidator",
     "DatabaseValidator",
+    "AuthValidator",
     "ApiValidator",
+    "FrontendValidator",
     "SecurityValidator",
     "DocumentationValidator",
     "DockerValidator",
