@@ -1,335 +1,241 @@
-# 🛠️ CodeForge AI
-
 <div align="center">
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
-[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B35?style=for-the-badge&logo=databricks&logoColor=white)](https://www.trychroma.com)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
-[![Groq](https://img.shields.io/badge/Groq_Cloud-F55036?style=for-the-badge&logo=groq&logoColor=white)](https://groq.com)
-[![Ollama](https://img.shields.io/badge/Ollama-000000?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.com)
+# ⚡ CodeForge AI `v2.0.0`
+### Autonomous Enterprise Multi-Agent Software Engineering Platform
 
-**An enterprise-grade, multi-agent AI software developer system that designs, builds, reviews, documents, and remembers — generating fully-functional, secure backend + frontend applications from simple natural language descriptions.**
+[![Version](https://img.shields.io/badge/Release-v2.0.0-blue?style=for-the-badge&logo=github)](docs/RELEASE_NOTES_v2.0.0.md)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js-14.2+-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_Store-FF6B35?style=for-the-badge&logo=databricks&logoColor=white)](https://www.trychroma.com)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
+[![Groq](https://img.shields.io/badge/Groq_Cloud-API-F55036?style=for-the-badge&logo=groq&logoColor=white)](https://groq.com)
+[![Ollama](https://img.shields.io/badge/Ollama-Local_AI-000000?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.com)
 
-[Architecture](#-system-architecture--flow) • [Memory System](#-memory-system-phases-31--33) • [Agents](#-agent-pipeline) • [Setup](#-getting-started) • [Testing](#-testing) • [Deployment](DEPLOYMENT.md)
+<br />
+
+**CodeForge AI is a state-of-the-art autonomous software engineering platform powered by a 13-Agent LangGraph workflow, hybrid local/cloud RAG, tiered memory management, real-time WebSocket monitoring, a 12-stage automated validation quality gate, project timeline telemetry, and an automated portfolio bundle exporter.**
+
+<br />
+
+[System Architecture](#-system-architecture) • [Key Capabilities](#-key-capabilities) • [13-Agent Orchestrator](#-13-agent-orchestration-pipeline) • [12-Stage Quality Gate](#-12-stage-validation-quality-gate) • [Quickstart](#-getting-started) • [Documentation](#-documentation)
+
+---
 
 </div>
 
+<br />
+
+## 🌟 Key Capabilities
+
+CodeForge AI provides a complete end-to-end software development lifecycle (SDLC) automation solution:
+
+- 🤖 **13-Agent LangGraph State Machine**: Specialized AI roles (PM, BA, PO, Architect, DB, API, Backend, Security, QA, Frontend, Reviewer, Docs, DevOps) collaborating deterministically.
+- 🔄 **AI Mode Manager (LOCAL / CLOUD)**: Hot-swap between local Ollama models (`nomic-embed-text` / Llama 3) and cloud Groq inference engines with zero downtime.
+- 🧠 **Tiered Memory & RAG Subsystem**: Working, Short-Term, Long-Term, and Ephemeral Context memory coupled with ChromaDB vector search and BM25 sparse keyword ranking.
+- ⚡ **Real-Time WebSocket Telemetry**: EventBus event streaming (`/ws/monitoring`), live metrics engine, log viewer, and agent step tracking.
+- 🛡️ **12-Stage Validation Quality Gate**: Automated structural, AST syntax, dependency, security (OWASP Top 10), Docker, database, API, and performance analysis with weighted A+ to F grading.
+- ⏱️ **Project Timeline & Milestone Engine**: Persistent database event tracking, 9 automated milestone detectors, runtime statistics, and performance analytics.
+- 📦 **Automated Portfolio & Diagram Exporter**: Generates 8 Mermaid architecture diagrams (Flowchart, ERD, Sequence, etc.), multi-format reports (MD, HTML, JSON, PDF Metadata), and a downloadable ZIP bundle.
+- 🔒 **Enterprise Production Hardened**: Database connection pool recycling (`pool_recycle=3600`), correlation ID propagation (`X-Correlation-ID`), Zip Slip safety, prompt injection filters, and Kubernetes health probes (`/health`, `/health/liveness`, `/health/readiness`).
+
 ---
 
-## 📐 System Architecture & Flow
-
-CodeForge AI runs a deterministic **13-Agent LangGraph state machine**. Each agent operates as a specialised role within a simulated software development team. Every agent output is automatically embedded and stored in a persistent vector memory, enabling downstream agents to retrieve relevant context from previous work.
+## 📐 System Architecture
 
 ```mermaid
 flowchart TD
-    A[User Prompt] --> PM[Project Manager]
-    PM --> BA[Business Analyst]
-    BA --> PO[Product Owner]
-    PO --> SA[Solution Architect]
-    SA --> DB[Database Engineer]
-    SA --> AD[API Designer]
-    DB --> BD[Backend Developer]
-    AD --> BD
-    BD --> SE[Security Engineer]
-    SE --> QA[QA Engineer]
-    QA --> FE[Frontend Developer]
-    FE --> CR[Code Reviewer]
-    CR --> DW[Documentation Writer]
-    DW --> DO[DevOps Engineer]
-    DO -->|Generated Files + Memory| VDB[(ChromaDB Vector Store)]
-    VDB --> ZIP[Download ZIP Archive]
+    subgraph Frontend["Frontend Layer (Next.js 14 / Tailwind CSS)"]
+        UI[Dashboard & Studio Pages]
+        MON_UI[Real-Time Monitoring Dashboard]
+        VAL_UI[Validation Quality Gate Dashboard]
+        TIM_UI[Project Timeline & Milestones]
+        PORT_UI[Portfolio & Diagram Center]
+    end
+
+    subgraph Backend["Backend API Layer (FastAPI / Python 3.11)"]
+        API[FastAPI Router Engine]
+        AUTH[JWT Auth & RBAC Security]
+        CORR[Correlation Middleware]
+        HLTH[Health & Diagnostic Probes]
+    end
+
+    subgraph CoreEngine["Autonomous Core Subsystems"]
+        ORCH[13-Agent LangGraph Orchestrator]
+        RAG[Hybrid RAG & ChromaDB Engine]
+        MEM[Tiered Memory Manager]
+        MODE[AI Mode Manager (LOCAL/CLOUD)]
+        BUS[EventBus & Telemetry Collector]
+        VAL[12-Stage Validation Quality Gate]
+        TIM[Timeline Repository & Engine]
+        PORT[Portfolio & Mermaid Diagram Service]
+    end
+
+    UI --> API
+    MON_UI --> BUS
+    VAL_UI --> VAL
+    TIM_UI --> TIM
+    PORT_UI --> PORT
+
+    API --> AUTH
+    API --> CORR
+    API --> HLTH
+    API --> ORCH
+
+    ORCH --> RAG
+    ORCH --> MEM
+    ORCH --> MODE
+    ORCH --> BUS
+    ORCH --> VAL
+    VAL --> TIM
+    TIM --> PORT
 ```
 
 ---
 
-## 👥 Agent Pipeline
+## 👥 13-Agent Orchestration Pipeline
 
-| # | Agent | Model | Responsibility |
-|---|-------|-------|----------------|
-| 1 | **Project Manager** | Llama 3.3-70b | Master project plan, milestones, risk assessment |
-| 2 | **Business Analyst** | Llama 3.1-8b | User stories, entity mapping, requirements |
-| 3 | **Product Owner** | Llama 3.1-8b | Sprint backlog, feature prioritisation, acceptance criteria |
-| 4 | **Solution Architect** | Llama 3.3-70b | DB schema, API routes, file structure |
-| 5 | **Database Engineer** | Llama 3.3-70b | ER diagrams, indexes, SQLAlchemy models, migrations |
-| 6 | **API Designer** | Llama 3.3-70b | OpenAPI 3.1 spec, request/response models, auth flows |
-| 7 | **Backend Developer** | Llama 3.3-70b | FastAPI codebase, routes, services, middleware |
-| 8 | **Security Engineer** | Llama 3.3-70b | OWASP audit, JWT hardening, secrets detection |
-| 9 | **QA Engineer** | Llama 3.3-70b | Test plan, unit + integration + API test code |
-| 10 | **Frontend Developer** | Llama 3.3-70b | Next.js pages, components, Tailwind UI |
-| 11 | **Code Reviewer** | Llama 3.3-70b | Security audit, auto-fix, style enforcement |
-| 12 | **Documentation Writer** | Llama 3.1-8b | README, API docs, deployment guides |
-| 13 | **DevOps Engineer** | Llama 3.3-70b | Dockerfile, docker-compose, GitHub Actions, nginx |
-
----
-
-## 🧠 Memory System (Phases 3.1 – 3.3)
-
-CodeForge AI includes a fully modular, open-source persistent memory subsystem built on **ChromaDB** and a provider-agnostic embedding architecture. No OpenAI dependency. No vendor lock-in.
-
-### Architecture
-
-```
-backend/memory/
-├── interfaces/          ← ABCs: EmbeddingProviderInterface, VectorStoreInterface, MemoryProviderInterface
-├── embeddings/          ← LocalEmbeddings · OllamaEmbeddings · HuggingFaceEmbeddings · resolver
-├── vectorstores/        ← ChromaVectorStore (12 persistent collections)
-├── rag/                 ← RAG Pipeline: chunker · storage · retrieval · pipeline
-├── utils/               ← cosine_similarity · chunking · LRU cache
-├── schemas.py           ← Pydantic contracts
-├── config.py            ← MemorySettings (env-var driven)
-├── service.py           ← MemoryService façade
-└── manager.py           ← MemoryManager (provider registry + lifecycle)
-```
-
-### Embedding Providers
-
-| Provider | Mode | Model | Deps | Health Check |
-|----------|------|-------|------|-------------|
-| `LocalEmbeddings` | Any | Hash-projection (1536-dim) | None | Always ✓ |
-| `OllamaEmbeddings` | Local | `nomic-embed-text` (768-dim) | httpx | GET /api/tags |
-| `HuggingFaceEmbeddings` | Cloud | `all-MiniLM-L6-v2` (384-dim) | httpx | Ping embed |
-
-Provider resolution follows a configurable fallback chain: `EMBEDDING_PROVIDER` → `EMBEDDING_FALLBACK_CHAIN` → `LocalEmbeddings` (guaranteed final fallback).
-
-### RAG Pipeline
-
-The `memory/rag/` package provides a production-grade Retrieval-Augmented Generation pipeline:
-
-**Ingest path:**
-```
-text → ChunkingEngine → StorageEngine → ChromaDB
-                ↓             ↓
-         4 strategies    content-hash dedup
-         word-boundary   batch upsert (configurable)
-         configurable    version mirror → project_history
-```
-
-**Retrieval path:**
-```
-query → embed → ANN search → exact cosine re-rank → MetadataFilter → MMR → results
-```
-
-**Chunking strategies:**
-
-| Strategy | How it splits |
-|----------|---------------|
-| `CHARACTER` | Fixed-size windows with optional word-boundary snapping |
-| `SENTENCE` | Split on `.!?` boundaries, window if still large |
-| `PARAGRAPH` | Split on blank lines, window large paragraphs |
-| `RECURSIVE` | Paragraph → sentence → character cascade (best quality) |
-
-**Memory collections (12):**
-
-`requirements` · `architecture` · `database_design` · `api_contracts` · `backend_code` · `frontend_code` · `security_reports` · `qa_reports` · `documentation` · `devops` · `conversation` · `project_history`
-
-### Memory Configuration
-
-```env
-# Deployment mode: local (Ollama) or cloud (HuggingFace)
-MEMORY_MODE=local
-EMBEDDING_PROVIDER=local           # local | ollama | huggingface
-EMBEDDING_FALLBACK_CHAIN=ollama,huggingface,local
-
-# LOCAL — Ollama
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_EMBED_MODEL=nomic-embed-text
-
-# CLOUD — HuggingFace Inference API
-HF_API_TOKEN=hf_...
-HF_EMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2
-
-# RAG tuning
-RAG_CHUNK_SIZE=800
-RAG_CHUNK_OVERLAP=100
-RAG_DEFAULT_LIMIT=5
-RAG_DEFAULT_THRESHOLD=0.0
-
-# Cache
-EMBEDDING_CACHE_ENABLED=true
-EMBEDDING_CACHE_MAX_SIZE=512
-```
+| # | Agent Role | Core Responsibility | Default Artifact Output |
+|---|------------|---------------------|--------------------------|
+| 1 | **Project Manager** | Master project plan, task decomposition, milestone scoping | `tasks.json` |
+| 2 | **Business Analyst** | User stories, domain entity mapping, acceptance criteria | `requirements.md` |
+| 3 | **Product Owner** | Feature prioritization & Product Requirement Document | `prd.md` |
+| 4 | **Solution Architect** | System architecture, layer boundaries, design patterns | `architecture.md` |
+| 5 | **Database Engineer** | Entity Relationship specs, SQLAlchemy models, migration scripts | `schema.sql`, `models.py` |
+| 6 | **API Designer** | OpenAPI 3.1 specification, request/response DTO contracts | `openapi.json` |
+| 7 | **Backend Developer** | Production FastAPI application, routers, services, repositories | `main.py`, `services.py` |
+| 8 | **Security Engineer** | OWASP Top 10 security audit, JWT hardening, secret scanning | `security.py` |
+| 9 | **QA Engineer** | Automated unit, integration, and API test suites | `test_main.py` |
+| 10 | **Frontend Developer** | Next.js App Router pages, React Server Components, Tailwind UI | `page.tsx`, `components/` |
+| 11 | **Code Reviewer** | Code quality inspection, anti-pattern detection, refactoring | `review_notes.md` |
+| 12 | **Documentation Writer** | Comprehensive README, installation & deployment guides | `README.md` |
+| 13 | **DevOps Engineer** | Dockerfile, docker-compose, Nginx, deployment pipelines | `Dockerfile`, `docker-compose.yml` |
 
 ---
 
-## 🌟 Key Technical Achievements
+## 🛡️ 12-Stage Validation Quality Gate
 
-> **All achievements are verified by the automated test suite (129 passing tests).**
+Every generated codebase passes through a mandatory 12-stage validation pipeline prior to export:
 
-- **🧠 Persistent Vector Memory**: Every agent artifact is chunked, embedded, and stored in ChromaDB. Downstream agents retrieve semantically relevant context from prior agent outputs before generating their own.
-- **🔌 Provider Abstraction**: Three embedding providers (Local hash-projection, Ollama, HuggingFace) behind clean ABCs. Switch between local and cloud mode with a single env-var change. No OpenAI dependency.
-- **📄 4-Strategy Chunker**: Character, sentence, paragraph, and recursive splitting with overlap, word-boundary snapping, min-size filtering, and content-hash deduplication.
-- **🔍 Semantic Retrieval with MMR**: ANN search + exact cosine re-ranking + optional Maximal Marginal Relevance for diverse context windows. Supports AND/OR compound metadata filtering.
-- **💾 Serverless-Ready Storage**: Projects are saved as dynamic JSON objects in PostgreSQL — no temp files, no disk writes.
-- **⚡ In-Memory ZIP Compiling**: `zipfile` + `io.BytesIO` packages codebases on-the-fly. No cleanup required.
-- **🌐 Render Connection Solver**: Custom `httpx.HTTPTransport(local_address="0.0.0.0")` bypasses dual-stack IPv6 timeouts on Render.
-- **🛡️ Robust JSON Extraction**: Markdown fence splitting, `{}` boundary isolation, `strict=False` parsing for agent outputs.
+```
+Codebase → [1. Structure] → [2. Syntax (AST)] → [3. Dependencies] → [4. Architecture]
+         → [5. Database]  → [6. API Routes]    → [7. Security]     → [8. Documentation]
+         → [9. Docker]     → [10. Testing]     → [11. Performance] → [12. Code Quality]
+         → Weighted Quality Score (0-100) & Grade (A+ to F) → Export Approval
+```
 
----
-
-## 🛠️ Technology Stack
-
-| Layer | Technology | Details |
-|:------|:-----------|:--------|
-| **Backend Core** | FastAPI | Async REST API, Python 3.10+ |
-| **Orchestration** | LangGraph | 13-node deterministic state machine |
-| **Database** | PostgreSQL + Alembic | Neon serverless DB, schema migrations |
-| **Vector Store** | ChromaDB | Persistent local embedding store |
-| **Embeddings** | Ollama / HuggingFace / Local | Provider-switchable via env-var |
-| **AI Interface** | OpenAI SDK v1.54.4 | Groq API compatibility layer |
-| **Frontend** | Next.js 14/15 | Glassmorphic dashboard, Tailwind CSS |
-| **Containerisation** | Docker + Compose | One-command deployment |
+| Grade | Score Threshold | Export Status |
+|-------|-----------------|---------------|
+| **A+** | 95.0 – 100.0 | **Production Ready** ✅ |
+| **A** | 90.0 – 94.9 | **Excellent** ✅ |
+| **B** | 80.0 – 89.9 | **Good** ✅ |
+| **C** | 70.0 – 79.9 | **Needs Improvement** ⚠️ |
+| **F** | Below 70.0 | **Validation Failed** ❌ |
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+- **Python**: 3.11+
+- **Node.js**: 18+ & npm
+- **Database**: PostgreSQL (or SQLite for local dev)
+- **AI Mode**: [Groq API Key](https://console.groq.com) (CLOUD) or [Ollama](https://ollama.com) (LOCAL)
 
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL (or [Neon](https://neon.tech) serverless)
-- *(Optional for local embeddings)* [Ollama](https://ollama.com) with `nomic-embed-text` pulled
+---
 
 ### 1. Backend Setup
 
 ```bash
 cd backend
 
+# Create virtual environment
+python -m venv venv
+venv\Scripts\activate   # On Windows
+# source venv/bin/activate  # On Linux/macOS
+
 # Install dependencies
 pip install -r requirements.txt
 
-# Copy and edit environment config
+# Configure environment variables
 cp .env.example .env
 ```
 
 Edit `backend/.env`:
-
 ```env
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/codeforge
-JWT_SECRET_KEY=your-secure-secret-key
-GROQ_API_KEY=gsk_your_groq_key_here
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/codeforge
+JWT_SECRET_KEY=your-secure-jwt-secret-key
+GROQ_API_KEY=gsk_your_groq_api_key_here
 
-# Memory system (choose a mode)
-MEMORY_MODE=local
-EMBEDDING_PROVIDER=local          # Use 'ollama' if Ollama is running
+# Provider Mode (GROQ or OLLAMA)
+AI_PROVIDER_MODE=GROQ
+OLLAMA_BASE_URL=http://localhost:11434
 ```
 
-Run migrations and start:
-
+Start the FastAPI production server:
 ```bash
-alembic upgrade head
 python -m uvicorn app.main:app --reload --port 8000
 ```
+
+---
 
 ### 2. Frontend Setup
 
 ```bash
 cd frontend
+
+# Install packages
 npm install
+
+# Start Next.js dev server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-### 3. (Optional) Start Ollama for Local Embeddings
-
-```bash
-# Pull the embedding model
-ollama pull nomic-embed-text
-
-# Ollama runs on http://localhost:11434 by default
-# Set EMBEDDING_PROVIDER=ollama in your .env
-```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-### 🐳 Docker Compose (Full Stack)
+### 3. Docker Compose (Full Stack)
 
 ```bash
-# Create root .env with your Groq key
-echo "GROQ_API_KEY=gsk_your_key_here" > .env
-
-# Build and start
+# Start backend, database, and frontend containers
 docker-compose up --build
-
-# Start frontend separately
-cd frontend && npm run dev
 ```
 
 ---
 
-## 🧪 Testing
+## 🧪 Release Verification & Testing
 
-### Run all memory + RAG tests
+Run the master v2.0.0 release verification test suite:
 
 ```bash
 cd backend
-python -m pytest tests/test_memory.py tests/test_memory_architecture.py tests/test_rag_pipeline.py -v
+python scratch/verify_release_v2_suite.py
 ```
 
-**129 tests, 0 failures** across:
-
-| Test File | Tests | Coverage |
-|-----------|-------|----------|
-| `test_memory.py` | 2 | CRUD lifecycle regression |
-| `test_memory_architecture.py` | 77 | Providers, interfaces, schemas, config, manager |
-| `test_rag_pipeline.py` | 52 | Chunker (4 strategies), storage, retrieval, pipeline, MMR, MetadataFilter |
-
-### Run the agent pipeline smoke test
-
+Check health probe endpoints:
 ```bash
-cd backend
-python smoke_test.py
-```
-
-### Health check
-
-```bash
-curl http://127.0.0.1:8000/groq-health
-# → {"status": "success"}
+curl http://localhost:8000/health
+curl http://localhost:8000/health/liveness
+curl http://localhost:8000/health/readiness
+curl http://localhost:8000/health/diagnostics
 ```
 
 ---
 
-## 📁 Project Structure
+## 📚 Documentation & Guides
 
-```
-codeforge-ai/
-├── backend/
-│   ├── agents/              ← 13 specialised LLM agents
-│   ├── app/
-│   │   ├── api/             ← FastAPI routes (auth, projects)
-│   │   ├── core/            ← Config, security
-│   │   ├── models/          ← SQLAlchemy ORM models
-│   │   └── schemas/         ← Pydantic schemas
-│   ├── memory/              ← Persistent memory system (Phase 3)
-│   │   ├── interfaces/      ← Provider ABCs
-│   │   ├── embeddings/      ← Local · Ollama · HuggingFace
-│   │   ├── vectorstores/    ← ChromaDB backend
-│   │   ├── rag/             ← Chunker · Storage · Retrieval · Pipeline
-│   │   └── utils/           ← Similarity · Chunking · Cache
-│   ├── orchestrator/        ← LangGraph graph, nodes, edges, state
-│   ├── prompts/             ← Agent system prompt markdown files
-│   ├── tests/               ← 129 passing tests
-│   ├── alembic/             ← Database migrations
-│   └── requirements.txt
-├── frontend/
-│   ├── app/                 ← Next.js App Router pages
-│   └── components/          ← React components
-├── docker-compose.yml
-└── README.md
-```
+Comprehensive technical documentation is available in the [`docs/`](docs/) directory:
 
----
-
-## ☁️ Production Cloud Deployment
-
-For production deployments (FastAPI on **Render**, Next.js on **Vercel**), see the [Cloud Deployment Guide](DEPLOYMENT.md).
+- 🏛️ [**System Architecture Guide**](docs/ARCHITECTURE.md): Full 14-phase subsystem blueprint.
+- 💻 [**Developer & Contributor Guide**](docs/DEVELOPER_GUIDE.md): Setup, workflow, and testing.
+- 🐳 [**Production Deployment Guide**](docs/DEPLOYMENT_GUIDE.md): Docker & Kubernetes configuration.
+- 🔌 [**API Reference Guide**](docs/API_GUIDE.md): Complete OpenAPI REST & WebSocket endpoints map.
+- 🚀 [**v2.0.0 Release Notes**](docs/RELEASE_NOTES_v2.0.0.md): Official release notes & production checklists.
+- 📝 [**CHANGELOG**](docs/CHANGELOG.md): Version history from Phase 1 through Phase 5.11.
 
 ---
 
 ## 📄 License
 
-[MIT](LICENSE) — free for personal and commercial use.
+Distributed under the MIT License. See [`LICENSE`](LICENSE) for details.
