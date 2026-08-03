@@ -40,10 +40,33 @@ class ModeManager:
     Unified AI Mode Manager Gateway for CodeForge AI.
     """
 
-    def __init__(self) -> None:
-        self.health_checker = ProviderHealthChecker()
-        self.model_manager = ModelManager()
-        self.embedding_manager = EmbeddingManager()
+    def __init__(
+        self,
+        health_checker: Optional[ProviderHealthChecker] = None,
+        model_manager: Optional[ModelManager] = None,
+        embedding_manager: Optional[EmbeddingManager] = None,
+    ) -> None:
+        self._health_checker = health_checker
+        self._model_manager = model_manager
+        self._embedding_manager = embedding_manager
+
+    @property
+    def health_checker(self) -> ProviderHealthChecker:
+        if self._health_checker is None:
+            self._health_checker = ProviderHealthChecker()
+        return self._health_checker
+
+    @property
+    def model_manager(self) -> ModelManager:
+        if self._model_manager is None:
+            self._model_manager = ModelManager()
+        return self._model_manager
+
+    @property
+    def embedding_manager(self) -> EmbeddingManager:
+        if self._embedding_manager is None:
+            self._embedding_manager = EmbeddingManager()
+        return self._embedding_manager
 
     async def switch_mode(
         self,
@@ -168,4 +191,23 @@ class ModeManager:
         }
 
 
-mode_manager = ModeManager()
+_mode_manager_instance: Optional[ModeManager] = None
+
+
+def get_mode_manager() -> ModeManager:
+    """Dependency injection helper / lazy accessor for ModeManager."""
+    global _mode_manager_instance
+    if _mode_manager_instance is None:
+        _mode_manager_instance = ModeManager()
+    return _mode_manager_instance
+
+
+class _LazyModeManagerProxy:
+    """Proxy object for backward compatibility with `mode_manager` imports."""
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(get_mode_manager(), name)
+
+
+mode_manager = _LazyModeManagerProxy()
+

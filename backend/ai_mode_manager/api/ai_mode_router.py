@@ -25,7 +25,7 @@ from app.core.security import get_current_user
 from ai_mode_manager.embeddings.embedding_manager import EmbeddingManager
 from ai_mode_manager.health.health_checker import ProviderHealthChecker
 from ai_mode_manager.llms.model_manager import ModelManager
-from ai_mode_manager.registry.provider_registry import provider_registry
+from ai_mode_manager.registry.provider_registry import ProviderRegistry, get_provider_registry
 from ai_mode_manager.schemas import (
     AIConfigResponse,
     EmbeddingInfoResponse,
@@ -36,7 +36,7 @@ from ai_mode_manager.schemas import (
     UpdateConfigRequest,
     WorkingMode,
 )
-from ai_mode_manager.services.mode_manager import ModeManager, mode_manager
+from ai_mode_manager.services.mode_manager import ModeManager, get_mode_manager
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,11 @@ router = APIRouter(prefix="/ai-mode", tags=["ai-mode-manager"])
 
 
 def _mode_manager() -> ModeManager:
-    return mode_manager
+    return get_mode_manager()
+
+
+def _provider_registry() -> ProviderRegistry:
+    return get_provider_registry()
 
 
 def _model_manager() -> ModelManager:
@@ -79,9 +83,10 @@ async def get_current_mode_info(
 )
 async def list_providers(
     _user=Depends(get_current_user),
+    reg: ProviderRegistry = Depends(_provider_registry),
 ):
     """List details of all registered AI providers."""
-    providers = provider_registry.list_providers()
+    providers = reg.list_providers()
     return [p.get_information() for p in providers]
 
 
