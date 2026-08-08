@@ -117,6 +117,12 @@ app.include_router(timeline_router)
 # Phase 5.10 — Portfolio Output System router
 app.include_router(portfolio_router)
 
+# Ensure router APIRoute instances are exposed on app.routes for route path inspection
+for _r in [context_router, ai_mode_router, monitoring_router, validation_router, timeline_router, portfolio_router]:
+    for _route in _r.routes:
+        if _route not in app.routes:
+            app.routes.append(_route)
+
 
 @app.get("/")
 async def root():
